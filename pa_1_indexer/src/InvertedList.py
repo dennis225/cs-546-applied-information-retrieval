@@ -15,7 +15,7 @@ class InvertedList:
         return len(self._postings)
     
     # Converts the inverted list to a bytearray and returns the bytearray
-    def convert_to_bytearray(self, uncompressed):
+    def convert_to_bytearray(self, uncompressed=False):
         # Initialize an empty bytearray
         inverted_list_binary = bytearray()
         size_in_bytes = 0
@@ -41,10 +41,11 @@ class InvertedList:
         return (inverted_list_binary, size_in_bytes)
     
     # Returns the postings in the inverted list
-    def get_postings(self, uncompressed):
+    def get_postings(self, uncompressed=False, in_memory=False):
         # While fetching positions in a document use tuple instead of list - faster than list
-        if uncompressed:
-            pass
-        else:
-            pass
+        if not in_memory:
+            if uncompressed:
+                pass
+            else:
+                pass
         return self._postings

@@ -17,6 +17,10 @@ class InvertedIndex:
     def get_map(self):
         return self._map
     
+    def delete_map(self):
+        self._map = {}
+        self.set_in_memory(False)
+    
     def update_map(self, term, doc_id, position):
         inverted_list = self._map[term]
         df = inverted_list.add_posting(doc_id, position)
