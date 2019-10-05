@@ -5,6 +5,7 @@ import json
 from collections import defaultdict
 
 # Import src files
+from InvertedList import InvertedList
 from InvertedIndex import InvertedIndex
 
 
@@ -36,8 +37,23 @@ class Indexer:
             self.dump_inverted_index_to_disk()
             self.remove_inverted_index_from_memory()
     
-    def load_inverted_index_in_memory(self):
-        pass
+    def load_inverted_index_in_memory(self, lookup_table_file, inverted_lists_file):
+        # Load lookup table
+        lookup_table = json.load(lookup_table_file)
+        self.inverted_index.load_lookup_table(lookup_table)
+        
+        # Load inverted lists
+        index_map = defaultdict(InvertedList)
+        for term, term_stats in lookup_table.items():
+            inverted_list = index_map[term]
+            inverted_list_binary = self.read_inverted_list_from_file(inverted_lists_file, term_stats['posting_list_position'], term_stats['posting_list_size'])
+            inverted_list.bytearray_to_postings(inverted_list_binary, self.config.uncompressed, term_stats['df'])
+        self.inverted_index.load_map(index_map)
+    
+    def read_inverted_list_from_file(self, inverted_lists_file, posting_list_position, posting_list_size):
+        inverted_lists_file.seek(posting_list_position)
+        inverted_list_binary = bytearray(inverted_lists_file.read(posting_list_size))
+        return inverted_list_binary
     
     def remove_inverted_index_from_memory(self):
         self.inverted_index.delete_map()
@@ -46,7 +62,7 @@ class Indexer:
         with open('../' + self.config.index_dir + '/' + self.config.inverted_lists_file_name, 'wb') as f:
             for term, inverted_list in self.inverted_index.get_map().items():
                 position_in_file = f.tell()
-                inverted_list_binary, size_in_bytes = inverted_list.convert_to_bytearray(self.config.uncompressed)
+                inverted_list_binary, size_in_bytes = inverted_list.postings_to_bytearray(self.config.uncompressed)
                 f.write(inverted_list_binary)
                 self.inverted_index.update_lookup_table(term, position_in_file, size_in_bytes)
         

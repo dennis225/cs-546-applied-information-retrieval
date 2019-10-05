@@ -31,4 +31,12 @@ if __name__ == '__main__':
         
         config = Config(**params)
         indexer = Indexer(config)
-        indexer.create_inverted_index()
+
+        try:
+            with open('../' + args.index_dir + '/' + args.lookup_table_file_name, 'r') as lookup_table_file:
+                with open('../' + args.index_dir + '/' + args.inverted_lists_file_name, 'rb') as inverted_lists_file:
+                    # Load lookup table and inverted lists from disk
+                    indexer.load_inverted_index_in_memory(lookup_table_file, inverted_lists_file)
+        except Exception as e:
+            # Create inverted index
+            indexer.create_inverted_index()

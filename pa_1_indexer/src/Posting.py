@@ -18,3 +18,7 @@ class Posting:
     # Adds to the list the new position where the term occurred in the document
     def update_term_positions(self, position):
         self._term_positions.append(position)
+    
+    # Sets a list of positions of the term in the given document
+    def set_term_positions(self, positions):
+        self._term_positions = positions

@@ -17,17 +17,25 @@ class InvertedIndex:
     def get_map(self):
         return self._map
     
+    def load_map(self, index_map):
+        self._map = index_map
+    
     def delete_map(self):
         self._map = {}
         self.set_in_memory(False)
     
     def update_map(self, term, doc_id, position):
+        # Add or update the InvertedList corresponding to the term
         inverted_list = self._map[term]
-        df = inverted_list.add_posting(doc_id, position)
+        inverted_list.add_posting(doc_id, position)
+        df = len(inverted_list.get_postings())
         self.add_to_lookup_table(term, df=df)
     
     def get_lookup_table(self):
         return self._lookup_table
+    
+    def load_lookup_table(self, lookup_table):
+        self._lookup_table = lookup_table
     
     def add_to_lookup_table(self, term, df):
         if term not in self._lookup_table:
@@ -62,6 +70,9 @@ class InvertedIndex:
     # Returns size of the inverted list in bytes
     def get_posting_list_size(self, term):
         return self._lookup_table[term]['posting_list_size']
+    
+    def get_postings(self, term):
+        return self._map[term].get_postings()
     
     # Returns a list of terms in the vocabulary
     def get_vocabulary(self):

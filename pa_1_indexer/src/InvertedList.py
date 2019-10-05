@@ -12,10 +12,9 @@ class InvertedList:
             new_posting = Posting(doc_id)
             self._postings.append(new_posting)
         self._postings[-1].update_term_positions(position)
-        return len(self._postings)
     
     # Converts the inverted list to a bytearray and returns the bytearray
-    def convert_to_bytearray(self, uncompressed=False):
+    def postings_to_bytearray(self, uncompressed=False):
         # Initialize an empty bytearray
         inverted_list_binary = bytearray()
         size_in_bytes = 0
@@ -34,18 +33,41 @@ class InvertedList:
                 # Convert term positions to binary
                 format_positions = '<' + str(posting.get_dtf()) + 'i'
                 positions_binary = struct.pack(format_positions, *posting.get_term_positions())
-                inverted_list_binary += doc_id_binary + dtf_binary + positions_binary
                 size_in_bytes += struct.calcsize(format_positions)
+
+                inverted_list_binary += doc_id_binary + dtf_binary + positions_binary
         else:
             pass
         return (inverted_list_binary, size_in_bytes)
     
-    # Returns the postings in the inverted list
-    def get_postings(self, uncompressed=False, in_memory=False):
+    # Converts the bytearray to a postings list
+    def bytearray_to_postings(self, inverted_list_binary, uncompressed, df):
         # While fetching positions in a document use tuple instead of list - faster than list
-        if not in_memory:
-            if uncompressed:
-                pass
-            else:
-                pass
+        size_in_bytes = 0
+        if uncompressed:
+            # Loop over all postings
+            for _ in range(df):
+                # Convert binary to document ID using little-endian byte-order and integer format
+                format_doc_id = '<i'
+                doc_id = struct.unpack_from(format_doc_id, inverted_list_binary, 0)[0]
+                size_in_bytes += struct.calcsize(format_doc_id)
+                
+                # Convert binary to document term frequency
+                format_dtf = '<i'
+                dtf = struct.unpack_from(format_dtf, inverted_list_binary, size_in_bytes)[0]
+                size_in_bytes += struct.calcsize(format_dtf)
+                
+                # Convert binary to term positions
+                format_positions = '<' + str(dtf) + 'i'
+                positions = list(struct.unpack_from(format_positions, inverted_list_binary, size_in_bytes))
+                size_in_bytes += struct.calcsize(format_positions)
+
+                posting = Posting(doc_id)
+                posting.set_term_positions(positions)
+                self._postings.append(posting)
+        else:
+            pass
+    
+    # Returns the postings in the inverted list
+    def get_postings(self):
         return self._postings
