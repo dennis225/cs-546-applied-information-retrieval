@@ -11,8 +11,8 @@ if __name__ == '__main__':
     parser.add_argument('--uncompressed', default=False, help='Set to True to store uncompressed index, default is False and only compressed index is stored')
     args = parser.parse_args()
 
-    if not args.compressed:
+    if args.uncompressed:
         config = Config(data_file_name='shakespeare-scenes.json', uncompressed=args.uncompressed)
         indexer = Indexer(config)
-        indexer.create_index()
-        indexer.dump_index_to_disk()
+        indexer.create_inverted_index()
+        indexer.dump_inverted_index_to_disk()
