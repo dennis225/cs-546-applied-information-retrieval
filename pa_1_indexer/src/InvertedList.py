@@ -20,6 +20,7 @@ class InvertedList:
         inverted_list_binary = bytearray()
         size_in_bytes = 0
         if not compressed:
+            # print('Using uncompressed list for encoding')
             for posting in self._postings:
                 # Convert document ID to binary using little-endian byte-order and integer format
                 format_doc_id = '<i'
@@ -38,6 +39,7 @@ class InvertedList:
 
                 inverted_list_binary += doc_id_binary + dtf_binary + positions_binary
         else:
+            # print('Using compressed list for encoding')
             num_list = []
             previous_doc_id = 0
             for posting in self._postings:
@@ -64,6 +66,7 @@ class InvertedList:
         # While fetching positions in a document use tuple instead of list - faster than list
         size_in_bytes = 0
         if not compressed:
+            # print('Using uncompressed list for decoding')
             # Loop over all postings
             for _ in range(df):
                 # Convert binary to document ID using little-endian byte-order and integer format
@@ -85,6 +88,7 @@ class InvertedList:
                 posting.set_term_positions(positions)
                 self._postings.append(posting)
         else:
+            # print('Using compressed list for decoding')
             vbyte_decoded_inverted_list = utils.vbyte_decode(inverted_list_binary)
             pointer = 0
             previous_doc_id = 0
