@@ -19,7 +19,7 @@ class Config:
     ):
         self.data_file_name = data_file_name
         self.compressed = int(compressed)
-        self.in_memory = in_memory
+        self.in_memory = int(in_memory)
         self.retrieval_model = retrieval_model
         self.data_dir = data_dir
         self.index_dir = index_dir

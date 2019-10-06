@@ -1,4 +1,5 @@
 import random
+import struct
 
 
 def generate_random_terms_from_vocab(vocab, number_of_terms):
@@ -23,16 +24,19 @@ def create_dice_paired_query(query, dice):
         dice_paired_terms.append(term)
         dice_paired_terms.append(dice_term)
     dice_paired_query = ' '.join(dice_paired_terms)
-    return (dice_terms, dice_paired_query)
+    dice_terms_string = ' '.join(dice_terms)
+    return (dice_terms_string, dice_paired_query)
 
 def add_dice_terms_to_random_queries(queries, dice):
     dice_paired_queries = []
+    dice_terms_strings = []
     for query in queries:
-        dice_terms, dice_paired_query = create_dice_paired_query(query, dice)
+        dice_terms_string, dice_paired_query = create_dice_paired_query(query, dice)
+        dice_terms_strings.append(dice_terms_string)
         dice_paired_queries.append(dice_paired_query)
-    return dice_paired_queries
+    return (dice_terms_strings, dice_paired_queries)
 
-def dump_queries_to_disk(queries, file):
+def dump_strings_to_disk(queries, file):
     with open(file, 'w') as f:
         for query in queries:
             f.write(query)
@@ -53,9 +57,7 @@ def compare_indices(index_1, index_2):
         df_1 = index_1.get_df(term)
         df_2 = index_2.get_df(term)
         assert df_1 == df_2, 'Document Frequencies do not match, term: {}, Index 1 has DF: {} and Index 2 has DF: {}'.format(term, df_1, df_2)
-
-import struct
-
+    return 'Indices are identical'
 
 def vbyte_encode(num_list):
     list_buffer = bytearray()
@@ -68,7 +70,6 @@ def vbyte_encode(num_list):
         list_buffer += struct.pack('<B', num | 0x80)
         size_in_bytes += struct.calcsize('<B')
     return (list_buffer, size_in_bytes)
-
 
 def vbyte_decode(list_buffer):
     num_list = []

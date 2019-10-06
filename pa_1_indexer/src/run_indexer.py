@@ -4,7 +4,6 @@ import json
 import os
 
 # Import src files
-from Config import Config
 from Indexer import Indexer
 from Query import Query
 from DiceCoefficient import DiceCoefficient
@@ -15,7 +14,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_file_name', default='shakespeare-scenes.json', help='Set the name of the data file to load the data from')
     parser.add_argument('--compressed', default=1, help='Set to 0 to not store compressed index')
-    parser.add_argument('--in_memory', default=False, help='Set to True if you want to store the whole index in memory')
+    parser.add_argument('--in_memory', default=0, help='Set to 1 if you want to store the whole index in memory')
     parser.add_argument('--retrieval_model', default='raw_counts', help='Set the type of retrieval model for queries')
     parser.add_argument('--data_dir', default='data', help='Set the name of the data directory')
     parser.add_argument('--index_dir', default='index', help='Set the name of the index directory')
@@ -31,6 +30,7 @@ def main():
     indexer = Indexer(args)
 
     if not indexer.config.compressed:
+        print('Using uncompressed index')
         # Get the inverted index
         inverted_index_1 = indexer.get_inverted_index(False)
 
@@ -41,16 +41,13 @@ def main():
         query = Query(indexer.config, inverted_index_1)
         results = query.get_documents(vocab[0] + ' ' + vocab[1])
 
-        print('For uncompressed list:')
-        print(inverted_index_1.get_posting_list_position(vocab[0]))
-        print(inverted_index_1.get_posting_list_position(vocab[1]))
-
         # Test dice coefficient
         dice = DiceCoefficient(indexer.config, inverted_index_1)
         dice_coeffs = dice.calculate_dice_coefficients(vocab[1], count=10)
-        print(dice_coeffs)
+        print('Top 10 Dice Coefficients', dice_coeffs)
     
     if indexer.config.compressed:
+        print('Using compressed index')
         # Get the inverted index
         inverted_index_2 = indexer.get_inverted_index(True)
 
@@ -61,14 +58,10 @@ def main():
         query = Query(indexer.config, inverted_index_2)
         results = query.get_documents(vocab[0] + ' ' + vocab[1])
 
-        print('For compressed list:')
-        print(inverted_index_2.get_posting_list_position(vocab[0]))
-        print(inverted_index_2.get_posting_list_position(vocab[1]))
-
         # Test dice coefficient
         dice = DiceCoefficient(indexer.config, inverted_index_2)
         dice_coeffs = dice.calculate_dice_coefficients(vocab[1], count=10)
-        print(dice_coeffs)
+        print('Top 10 Dice Coefficients', dice_coeffs)
 
 if __name__ == '__main__':
     main()
