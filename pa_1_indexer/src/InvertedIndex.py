@@ -6,11 +6,13 @@ from InvertedList import InvertedList
 
 
 class InvertedIndex:
-    def __init__(self, config):
+    def __init__(self, config, compressed):
         self.config = config
         self._map = defaultdict(InvertedList)
         self._lookup_table = {}
         self._docs_meta = {}
+        self._vocabulary = []
+        self.compressed = compressed
     
     def get_docs_meta(self):
         return self._docs_meta
@@ -88,14 +90,21 @@ class InvertedIndex:
     def get_inverted_list(self, term):
         if not self.config.in_memory:
             term_stats = self._lookup_table[term]
-            with open('../' + self.config.index_dir + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
+            dir_name =  self.config.uncompressed_dir
+            if self.compressed:
+                dir_name =  self.config.compressed_dir
+            with open('../' + self.config.index_dir + '/' + dir_name + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
                 inverted_list_binary = self.read_inverted_list_from_file(inverted_lists_file, term_stats['posting_list_position'], term_stats['posting_list_size'])
                 inverted_list = InvertedList()
-                inverted_list.bytearray_to_postings(inverted_list_binary, self.config.uncompressed, term_stats['df'])
+                inverted_list.bytearray_to_postings(inverted_list_binary, self.compressed, term_stats['df'])
                 return inverted_list
         else:
             return self._map[term]
     
+    def load_vocabulary(self):
+        self._vocabulary = list(self._lookup_table.keys())
+        self._vocabulary.sort()
+    
     # Returns a list of terms in the vocabulary
     def get_vocabulary(self):
-        return list(self._lookup_table.keys())
+        return self._vocabulary

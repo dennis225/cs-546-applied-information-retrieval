@@ -14,11 +14,11 @@ class InvertedList:
         self._postings[-1].update_term_positions(position)
     
     # Converts the inverted list to a bytearray and returns the bytearray
-    def postings_to_bytearray(self, uncompressed=False):
+    def postings_to_bytearray(self, compressed):
         # Initialize an empty bytearray
         inverted_list_binary = bytearray()
         size_in_bytes = 0
-        if uncompressed:
+        if not compressed:
             for posting in self._postings:
                 # Convert document ID to binary using little-endian byte-order and integer format
                 format_doc_id = '<i'
@@ -41,10 +41,10 @@ class InvertedList:
         return (inverted_list_binary, size_in_bytes)
     
     # Converts the bytearray to a postings list
-    def bytearray_to_postings(self, inverted_list_binary, uncompressed, df):
+    def bytearray_to_postings(self, inverted_list_binary, compressed, df):
         # While fetching positions in a document use tuple instead of list - faster than list
         size_in_bytes = 0
-        if uncompressed:
+        if not compressed:
             # Loop over all postings
             for _ in range(df):
                 # Convert binary to document ID using little-endian byte-order and integer format
