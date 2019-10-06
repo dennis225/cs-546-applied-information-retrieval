@@ -1,5 +1,7 @@
+import sys
 import random
 import struct
+from collections import defaultdict
 
 
 def generate_random_terms_from_vocab(vocab, number_of_terms):
@@ -58,6 +60,30 @@ def compare_indices(index_1, index_2):
         df_2 = index_2.get_df(term)
         assert df_1 == df_2, 'Document Frequencies do not match, term: {}, Index 1 has DF: {} and Index 2 has DF: {}'.format(term, df_1, df_2)
     return 'Indices are identical'
+
+def get_data_stats(index):
+    plays = defaultdict(int)
+    shortest_scene = ('', 0, sys.maxsize)       # Tuple of (sceneId, sceneNum, sceneLength)
+    longest_scene = ('', 0, 0)                  # Tuple of (sceneId, sceneNum, sceneLength)
+    docs_meta = index.get_docs_meta()
+    total_scene_length = 0
+    for doc_id, doc_meta in docs_meta.items():
+        play_id = doc_meta['playId']
+        scene_id = doc_meta['sceneId']
+        scene_num = doc_meta['sceneNum']
+        scene_length = doc_meta['sceneLength']
+        plays[play_id] += scene_length
+        total_scene_length += scene_length
+        if scene_length <= shortest_scene[2]:
+            shortest_scene = (scene_id, scene_num, scene_length)
+        if scene_length >= longest_scene[2]:
+            longest_scene = (scene_id, scene_num, scene_length)
+    average_scene_length = total_scene_length / len(docs_meta.keys())
+    plays_list = plays.items()
+    sorted_plays_list = sorted(plays_list, key=lambda x: x[1], reverse=True)
+    longest_play = sorted_plays_list[0]
+    shortest_play = sorted_plays_list[-1]
+    return (longest_play, shortest_play, longest_scene, shortest_scene, average_scene_length)
 
 def vbyte_encode(num_list):
     list_buffer = bytearray()

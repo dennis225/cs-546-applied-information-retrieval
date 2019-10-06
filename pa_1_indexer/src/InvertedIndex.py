@@ -24,7 +24,7 @@ class InvertedIndex:
         self._docs_meta[str(doc_id)] = doc_meta
     
     def get_doc_meta(self, doc_id):
-        return self._docs_meta[doc_id]
+        return self._docs_meta[str(doc_id)]
     
     def get_map(self):
         return self._map

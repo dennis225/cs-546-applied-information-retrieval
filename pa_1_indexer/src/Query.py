@@ -39,7 +39,7 @@ class Query:
         sorted_scores_list = sorted(scores_list, key=lambda x: x[1], reverse=True)
         # Return the meta info of the top self.count number of documents
         for score in sorted_scores_list[:self.count]:
-            doc_id = str(score[0])
+            doc_id = score[0]
             doc_meta = deepcopy(self.inverted_index.get_doc_meta(doc_id))
             doc_meta['score'] = score[1]
             results.append(doc_meta)

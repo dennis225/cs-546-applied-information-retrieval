@@ -39,15 +39,18 @@ def run_experiments(compressed=1, uncompressed=1):
         index = inverted_index_compressed
         vocab = vocab_compressed
     
-    run_query_generator(vocab, 100, 7)
+    # run_query_generator(vocab, 100, 7)
 
-    run_dice_generator(config, index)
+    # run_dice_generator(config, index)
 
     print('Running timing experiment for uncompressed index..........')
     run_timing_experiment(config, inverted_index_uncompressed)
 
     print('Running timing experiment for compressed index..........')
     run_timing_experiment(config, inverted_index_compressed)
+
+    # run_stats_generator(index)
+    print('Finished evaluation!')
 
 
 def run_comparison_test(inverted_index_uncompressed, inverted_index_compressed):
@@ -76,6 +79,7 @@ def run_dice_generator(config, index):
     dump_strings_to_disk(dice_paired_queries, '../evaluation/queries_14_terms.txt')
     print('14 term queries generated!')
 
+
 def run_timing_experiment(config, inverted_index):
     query_index = Query(config, inverted_index)
     
@@ -98,6 +102,15 @@ def run_timing_experiment(config, inverted_index):
             query_index.get_documents(query)
         end_time = time.time()
         print('Time Taken: ', end_time - start_time, 'seconds')
+
+
+def run_stats_generator(index):
+    longest_play, shortest_play, longest_scene, shortest_scene, average_scene_length = get_data_stats(index)
+    print('Longest Play: Play ID =', longest_play[0], '| Play Length =', longest_play[1])
+    print('Shortest Play: Play ID =', shortest_play[0], '| Play Length =', shortest_play[1])
+    print('Longest Scene: Scene ID =', longest_scene[0], '| Scene Number =', longest_scene[1], '| Scene Length =', longest_scene[2])
+    print('Shortest Scene: Scene ID =', shortest_scene[0], '| Scene Number =', shortest_scene[1], '| Scene Length =', shortest_scene[2])
+    print('Average Scene Length: ', average_scene_length)
 
 
 if __name__ == '__main__':
