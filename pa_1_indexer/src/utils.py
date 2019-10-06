@@ -53,3 +53,54 @@ def compare_indices(index_1, index_2):
         df_1 = index_1.get_df(term)
         df_2 = index_2.get_df(term)
         assert df_1 == df_2, 'Document Frequencies do not match, term: {}, Index 1 has DF: {} and Index 2 has DF: {}'.format(term, df_1, df_2)
+
+import struct
+
+
+def vbyte_encode(num_list):
+    list_buffer = bytearray()
+    size_in_bytes = 0
+    for num in num_list:
+        while num >= 128:
+            list_buffer += struct.pack('<B', num & 0x7f)
+            size_in_bytes += struct.calcsize('<B')
+            num >>= 7
+        list_buffer += struct.pack('<B', num | 0x80)
+        size_in_bytes += struct.calcsize('<B')
+    return (list_buffer, size_in_bytes)
+
+
+def vbyte_decode(list_buffer):
+    num_list = []
+    i = 0
+    while i < len(list_buffer):
+        pointer = 0
+        byte = list_buffer[i]
+        num = byte & 0x7f
+        while byte & 0x80 == 0:
+            i += 1
+            pointer += 1
+            byte = list_buffer[i]
+            new_byte = byte & 0x7f
+            num |= new_byte << (7 * pointer)
+        num_list.append(num)
+        i += 1
+    return num_list
+
+def delta_encode(positions):
+    delta_encoded_positions = []
+    previous_position = 0
+    for position in positions:
+        diff = position - previous_position
+        delta_encoded_positions.append(diff)
+        previous_position = position
+    return delta_encoded_positions
+
+def delta_decode(delta_encoded_positions):
+    positions = []
+    previous_position = 0
+    for delta_encoded_position in delta_encoded_positions:
+        position = delta_encoded_position + previous_position
+        positions.append(position)
+        previous_position = position
+    return positions

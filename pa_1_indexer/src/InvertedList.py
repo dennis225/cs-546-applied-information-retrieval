@@ -1,5 +1,6 @@
 import struct
 from Posting import Posting
+import utils
 
 
 class InvertedList:
@@ -37,7 +38,25 @@ class InvertedList:
 
                 inverted_list_binary += doc_id_binary + dtf_binary + positions_binary
         else:
-            pass
+            num_list = []
+            previous_doc_id = 0
+            for posting in self._postings:
+                # Append the delta-encoded doc IDs
+                doc_id = posting.get_doc_id()
+                num_list.append(doc_id - previous_doc_id)
+                
+                # Append the dtf next
+                dtf = posting.get_dtf()
+                num_list.append(dtf)
+                
+                # Append the delta-encoded positions next
+                positions = posting.get_term_positions()
+                delta_encoded_postions = utils.delta_encode(positions)
+                num_list += delta_encoded_postions
+                
+                # Update previous doc_id
+                previous_doc_id = doc_id
+            inverted_list_binary, size_in_bytes = utils.vbyte_encode(num_list)
         return (inverted_list_binary, size_in_bytes)
     
     # Converts the bytearray to a postings list
@@ -66,7 +85,31 @@ class InvertedList:
                 posting.set_term_positions(positions)
                 self._postings.append(posting)
         else:
-            pass
+            vbyte_decoded_inverted_list = utils.vbyte_decode(inverted_list_binary)
+            pointer = 0
+            previous_doc_id = 0
+            for _ in range(df):
+                # Add delta to the previous doc_id to get current doc_id
+                delta = vbyte_decoded_inverted_list[pointer]
+                doc_id = delta + previous_doc_id
+                pointer += 1
+                
+                # Get dtf
+                dtf = vbyte_decoded_inverted_list[pointer]
+                pointer += 1
+                
+                # Get delta-decoded positions
+                delta_encoded_positions = vbyte_decoded_inverted_list[pointer: pointer + dtf]
+                positions = utils.delta_decode(delta_encoded_positions)
+                pointer += dtf
+                
+                # Create posting
+                posting = Posting(doc_id)
+                posting.set_term_positions(positions)
+                self._postings.append(posting)
+                
+                # Update previous doc_id
+                previous_doc_id = doc_id
     
     # Returns the postings in the inverted list
     def get_postings(self):

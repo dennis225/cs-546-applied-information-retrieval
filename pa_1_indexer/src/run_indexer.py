@@ -41,6 +41,10 @@ def main():
         query = Query(indexer.config, inverted_index_1)
         results = query.get_documents(vocab[0] + ' ' + vocab[1])
 
+        print('For uncompressed list:')
+        print(inverted_index_1.get_posting_list_position(vocab[0]))
+        print(inverted_index_1.get_posting_list_position(vocab[1]))
+
         # Test dice coefficient
         dice = DiceCoefficient(indexer.config, inverted_index_1)
         dice_coeffs = dice.calculate_dice_coefficients(vocab[1], count=10)
@@ -56,6 +60,10 @@ def main():
         # Test a query
         query = Query(indexer.config, inverted_index_2)
         results = query.get_documents(vocab[0] + ' ' + vocab[1])
+
+        print('For compressed list:')
+        print(inverted_index_2.get_posting_list_position(vocab[0]))
+        print(inverted_index_2.get_posting_list_position(vocab[1]))
 
         # Test dice coefficient
         dice = DiceCoefficient(indexer.config, inverted_index_2)
