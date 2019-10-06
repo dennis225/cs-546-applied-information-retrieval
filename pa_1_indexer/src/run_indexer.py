@@ -6,6 +6,7 @@ import json
 from Config import Config
 from Indexer import Indexer
 from Query import Query
+from DiceCoefficient import DiceCoefficient
 
 
 if __name__ == '__main__':
@@ -48,4 +49,6 @@ if __name__ == '__main__':
         vocab = inverted_index.get_vocabulary()
         query = Query(config, inverted_index)
         results = query.get_documents(vocab[0] + ' ' + vocab[1])
-        print(results)
+        dice = DiceCoefficient(config, inverted_index)
+        dice_coeffs = dice.calculate_dice_coefficients(vocab[1], count=10)
+        print(dice_coeffs)
