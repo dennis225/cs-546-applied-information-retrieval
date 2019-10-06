@@ -49,7 +49,7 @@ class InvertedList:
             for _ in range(df):
                 # Convert binary to document ID using little-endian byte-order and integer format
                 format_doc_id = '<i'
-                doc_id = struct.unpack_from(format_doc_id, inverted_list_binary, 0)[0]
+                doc_id = struct.unpack_from(format_doc_id, inverted_list_binary, size_in_bytes)[0]
                 size_in_bytes += struct.calcsize(format_doc_id)
                 
                 # Convert binary to document term frequency

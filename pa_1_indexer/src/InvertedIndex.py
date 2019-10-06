@@ -6,13 +6,23 @@ from InvertedList import InvertedList
 
 
 class InvertedIndex:
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self._map = defaultdict(InvertedList)
         self._lookup_table = {}
-        self._in_memory = False
+        self._docs_meta = {}
     
-    def set_in_memory(self, boolean):
-        self._in_memory = boolean
+    def get_docs_meta(self):
+        return self._docs_meta
+    
+    def load_docs_meta(self, docs_meta):
+        self._docs_meta = docs_meta
+    
+    def update_docs_meta(self, doc_id, doc_meta):
+        self._docs_meta[str(doc_id)] = doc_meta
+    
+    def get_doc_meta(self, doc_id):
+        return self._docs_meta[doc_id]
     
     def get_map(self):
         return self._map
@@ -22,7 +32,6 @@ class InvertedIndex:
     
     def delete_map(self):
         self._map = {}
-        self.set_in_memory(False)
     
     def update_map(self, term, doc_id, position):
         # Add or update the InvertedList corresponding to the term
@@ -71,8 +80,21 @@ class InvertedIndex:
     def get_posting_list_size(self, term):
         return self._lookup_table[term]['posting_list_size']
     
-    def get_postings(self, term):
-        return self._map[term].get_postings()
+    def read_inverted_list_from_file(self, inverted_lists_file, posting_list_position, posting_list_size):
+        inverted_lists_file.seek(posting_list_position)
+        inverted_list_binary = bytearray(inverted_lists_file.read(posting_list_size))
+        return inverted_list_binary
+
+    def get_inverted_list(self, term):
+        if not self.config.in_memory:
+            term_stats = self._lookup_table[term]
+            with open('../' + self.config.index_dir + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
+                inverted_list_binary = self.read_inverted_list_from_file(inverted_lists_file, term_stats['posting_list_position'], term_stats['posting_list_size'])
+                inverted_list = InvertedList()
+                inverted_list.bytearray_to_postings(inverted_list_binary, self.config.uncompressed, term_stats['df'])
+                return inverted_list
+        else:
+            return self._map[term]
     
     # Returns a list of terms in the vocabulary
     def get_vocabulary(self):
