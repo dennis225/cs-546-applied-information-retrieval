@@ -34,13 +34,14 @@ def run_experiments(compressed=1, uncompressed=1):
     
     if inverted_index_uncompressed:
         index = inverted_index_uncompressed
-        vocab = vocab_uncompressed
     elif inverted_index_compressed:
         index = inverted_index_compressed
-        vocab = vocab_compressed
     
     print('Generating 7 word queries..........')
-    run_query_generator(vocab, 100, 7)
+    run_query_generator(index, 100, 7)
+
+    print('Generating stats for 7 word queries..........')
+    run_query_stats_generator(index)
 
     print('Generating 7 two word phrase queries..........')
     run_dice_generator(config, index)
@@ -61,10 +62,30 @@ def run_comparison_test(inverted_index_uncompressed, inverted_index_compressed):
     print(compare_indices(inverted_index_uncompressed, inverted_index_compressed))
 
 
-def run_query_generator(vocab, number_of_queries, terms_per_query):
-    queries = generate_random_queries(vocab, number_of_queries, terms_per_query)
+def run_query_generator(index, number_of_queries, terms_per_query):
+    queries = generate_random_queries(index, number_of_queries, terms_per_query)
     dump_strings_to_disk(queries, '../evaluation/queries_7_terms.txt')
     print('7 term queries generated!')
+
+
+def run_query_stats_generator(index):
+    queries_stats = []
+    # Read 7 term queries from disk
+    with open('../evaluation/queries_7_terms.txt', 'r') as f:
+        queries = f.read().split('\n')
+        for query in queries:
+            terms = query.split()
+            line = []
+            for term in terms:
+                ctf = index.get_ctf(term)
+                df = index.get_df(term)
+                line.append(term)
+                line.append(str(ctf))
+                line.append(str(df))
+            query_stats = ' '.join(line)
+            queries_stats.append(query_stats)
+    dump_strings_to_disk(queries_stats, '../evaluation/queries_7_terms_stats.txt')
+    print('7 term queries with stats generated!')
 
 
 def run_dice_generator(config, index):

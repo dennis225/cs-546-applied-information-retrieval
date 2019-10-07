@@ -9,8 +9,9 @@ def generate_random_terms_from_vocab(vocab, number_of_terms):
     terms = random.sample(vocab, number_of_terms)
     return terms
 
-def generate_random_queries(vocab, number_of_queries, terms_per_query):
+def generate_random_queries(index, number_of_queries, terms_per_query):
     queries = []
+    vocab = index.get_vocabulary()
     for i in range(number_of_queries):
         terms = generate_random_terms_from_vocab(vocab, terms_per_query)
         query = ' '.join(terms)
