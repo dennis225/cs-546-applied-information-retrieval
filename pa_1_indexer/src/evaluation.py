@@ -39,9 +39,11 @@ def run_experiments(compressed=1, uncompressed=1):
         index = inverted_index_compressed
         vocab = vocab_compressed
     
-    # run_query_generator(vocab, 100, 7)
+    print('Generating 7 word queries..........')
+    run_query_generator(vocab, 100, 7)
 
-    # run_dice_generator(config, index)
+    print('Generating 7 two word phrase queries..........')
+    run_dice_generator(config, index)
 
     print('Running timing experiment for uncompressed index..........')
     run_timing_experiment(config, inverted_index_uncompressed)
@@ -49,7 +51,9 @@ def run_experiments(compressed=1, uncompressed=1):
     print('Running timing experiment for compressed index..........')
     run_timing_experiment(config, inverted_index_compressed)
 
-    # run_stats_generator(index)
+    print('Generating dataset stats..........')
+    run_stats_generator(index)
+    
     print('Finished evaluation!')
 
 

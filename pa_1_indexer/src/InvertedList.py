@@ -1,4 +1,7 @@
+# Import built-in libraries
 import struct
+
+# Import src files
 from Posting import Posting
 import utils
 
