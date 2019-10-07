@@ -10,7 +10,7 @@ from DiceCoefficient import DiceCoefficient
 from utils import *
 
 
-def run_experiments(compressed=1, uncompressed=1):
+def run_experiments(compressed=0, uncompressed=0):
     indexer = Indexer(argparse.Namespace(**{'index_dir':'index', 'config_file_name':'config'}))
     config = indexer.config
     
@@ -18,12 +18,14 @@ def run_experiments(compressed=1, uncompressed=1):
     inverted_index_compressed = None
 
     if uncompressed:
+        print('Using uncompressed index')
         # Get the uncompressed inverted index
         inverted_index_uncompressed = indexer.get_inverted_index(False)
         # Get the vocabulary
         vocab_uncompressed = inverted_index_uncompressed.get_vocabulary()
     
     if compressed:
+        print('Using compressed index')
         # Get the compressed inverted index
         inverted_index_compressed = indexer.get_inverted_index(True)
         # Get the vocabulary
@@ -146,12 +148,15 @@ if __name__ == '__main__':
     parser.add_argument('--index_dir', default='index', help='Set the name of the index directory')
     args = parser.parse_args()
 
-    if not args.compressed and not args.uncompressed:
-        args.compressed = 1
-        args.uncompressed = 1
+    compressed = int(args.compressed)
+    uncompressed = int(args.uncompressed)
+
+    if not compressed and not uncompressed:
+        compressed = 1
+        uncompressed = 1
     
     # Create the evaluation directory if it doesn't exist
     if not os.path.exists('../evaluation'):
         os.mkdir('../evaluation')
 
-    run_experiments(compressed=args.compressed, uncompressed=args.uncompressed)
+    run_experiments(compressed=compressed, uncompressed=uncompressed)
