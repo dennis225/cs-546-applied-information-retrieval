@@ -11,12 +11,22 @@ from InvertedIndex import InvertedIndex
 
 
 class Indexer:
+    """
+    Class to create, store and load an inverted index
+    """
     def __init__(self, new_config):
+        """
+        Namespace config: Arguments passed on the command line
+        """
         stored_config = self.get_config(new_config)
         stored_config.update(vars(new_config))
         self.config = Config(**stored_config)
     
     def get_config(self, params):
+        """
+        Returns the configuration from the disk (if it exists), otherwise an empty dict
+        Namespace params: Configuration params from command line
+        """
         config = {}
         try:
             with open('../' + params.index_dir + '/' + params.config_file_name, 'r') as f:
@@ -29,6 +39,9 @@ class Indexer:
         return config
     
     def load_data(self):
+        """
+        Loads a data file from the disk for any extension, currently only .json is supported
+        """
         data_file = '../' + self.config.data_dir + '/' + self.config.data_file_name
         with open(data_file, 'r') as f:
             root, ext = os.path.splitext(data_file)
@@ -38,6 +51,10 @@ class Indexer:
                 return json.load(f)
 
     def create_inverted_index(self, compressed):
+        """
+        Creates and returns an inverted index
+        bool compressed: Flag to choose between a compressed / uncompressed index
+        """
         inverted_index = InvertedIndex(self.config, compressed)
         data = self.load_data()
         doc_id = 0
@@ -59,6 +76,10 @@ class Indexer:
         return inverted_index
     
     def get_inverted_index(self, compressed):
+        """
+        Loads an inverted index from file or calls the create method if it doesn't exist
+        bool compressed: Flag to choose between a compressed / uncompressed index
+        """
         inverted_index = None
         try:
             with open('../' + self.config.index_dir + '/' + self.config.docs_meta_file_name, 'rb') as docs_meta_file:
@@ -82,6 +103,12 @@ class Indexer:
         return inverted_index
     
     def load_inverted_index_in_memory(self, docs_meta_file, lookup_table_file, inverted_lists_file, compressed):
+        """
+        Loads an inverted index in memory, inverted lists are not loaded by default
+        buffer docs_meta_file: Buffer for the docs meta file
+        buffer lookup_table_file: Buffer for the lookup table file
+        buffer inverted_lists_file: Buffer for the inverted lists file
+        """
         inverted_index = InvertedIndex(self.config, compressed)
 
         # Load meta info for documents
@@ -95,7 +122,7 @@ class Indexer:
         # Load vocabulary
         inverted_index.load_vocabulary()
         
-        # Load inverted lists if in_memory is True
+        # Load inverted lists only if in_memory is True
         if self.config.in_memory:
             index_map = defaultdict(InvertedList)
             for term, term_stats in lookup_table.items():
@@ -107,6 +134,11 @@ class Indexer:
         return inverted_index
 
     def dump_inverted_lists_to_disk(self, file_buffer, inverted_index):
+        """
+        Stores the inverted lists on disk
+        buffer file_buffer: Buffer for the inverted lists file
+        class inverted_index: Instance of the inverted index being used
+        """
         for term, inverted_list in inverted_index.get_map().items():
             position_in_file = file_buffer.tell()
             inverted_list_binary, size_in_bytes = inverted_list.postings_to_bytearray(inverted_index.compressed)
@@ -114,6 +146,10 @@ class Indexer:
             inverted_index.update_lookup_table(term, position_in_file, size_in_bytes)
     
     def dump_inverted_index_to_disk(self, inverted_index):
+        """
+        Stores the docs meta, configuration, lookup table and inverted lists on disk
+        class inverted_index: Instance of the inverted index being used
+        """
         # Create the index directory if it doesn't exist
         if not os.path.exists('../' + self.config.index_dir):
             os.mkdir('../' + self.config.index_dir)
@@ -147,4 +183,8 @@ class Indexer:
             json.dump(self.config.get_params(), f)
     
     def remove_inverted_index_from_memory(self, inverted_index):
+        """
+        Removes an inverted index from memory to free up memory
+        class inverted_index: Instance of the inverted index being used
+        """
         inverted_index.delete_map()

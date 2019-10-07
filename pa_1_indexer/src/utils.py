@@ -85,6 +85,8 @@ def get_data_stats(index):
     shortest_play = sorted_plays_list[-1]
     return (longest_play, shortest_play, longest_scene, shortest_scene, average_scene_length)
 
+# https://stackoverflow.com/questions/52668295/vbyte-decoder-in-information-retrieval
+# https://nlp.stanford.edu/IR-book/html/htmledition/variable-byte-codes-1.html
 def vbyte_encode(num_list):
     list_buffer = bytearray()
     size_in_bytes = 0
@@ -97,6 +99,8 @@ def vbyte_encode(num_list):
         size_in_bytes += struct.calcsize('<B')
     return (list_buffer, size_in_bytes)
 
+# https://stackoverflow.com/questions/52668295/vbyte-decoder-in-information-retrieval
+# https://nlp.stanford.edu/IR-book/html/htmledition/variable-byte-codes-1.html
 def vbyte_decode(list_buffer):
     num_list = []
     i = 0

@@ -4,15 +4,28 @@ from copy import deepcopy
 
 
 class Query:
-    def __init__(self, config, inverted_index, retrieval_model='raw_counts', sort_results=True, mode='term', count=10):
+    """
+    Class which exposes APIs to query an inverted index using various modes and scoring models
+    """
+    def __init__(self, config, inverted_index, retrieval_model='raw_counts', mode='term', count=10):
+        """
+        class config: Instance of the configuration of the active inverted index
+        class inverted_index: The inverted index to use for querying
+        str retrieval_model: Scoring model to be used for querying
+        str mode: Type of querying algorithm to use
+        int count: Number of documents to retrieve
+        """
         self.config = config
         self.inverted_index = inverted_index
         self.retrieval_model = retrieval_model
-        self.sort_results = sort_results
         self.mode = mode
         self.count = count
     
     def get_documents(self, query_string):
+        """
+        Returns a sorted list of documents from the index given a query
+        str query_string: A query of arbitrary number of terms
+        """
         if self.mode == 'term':
             return self.term_at_a_time_retrieval(query_string)
         elif self.mode == 'doc':
@@ -23,6 +36,10 @@ class Query:
             return self.conjunctive_document_at_a_time_retrieval(query_string)
     
     def term_at_a_time_retrieval(self, query_string):
+        """
+        Returns documents using the term-at-a-time retrieval algorithm
+        str query_string: A query of arbitrary number of terms
+        """
         scores = defaultdict(int)
         query_terms = query_string.split()
         results = []
@@ -46,10 +63,22 @@ class Query:
         return results
 
     def document_at_a_time_retrieval(self, query_string):
+        """
+        Returns documents using the document-at-a-time retrieval algorithm
+        str query_string: A query of arbitrary number of terms
+        """
         pass
     
     def conjunctive_term_at_a_time_retrieval(self, query_string):
+        """
+        Returns documents using the conjunctive-term-at-a-time retrieval algorithm
+        str query_string: A query of arbitrary number of terms
+        """
         pass
 
     def conjunctive_document_at_a_time_retrieval(self, query_string):
+        """
+        Returns documents using the conjunctive-document-at-a-time retrieval algorithm
+        str query_string: A query of arbitrary number of terms
+        """
         pass

@@ -37,14 +37,17 @@ def main():
         # Get the vocabulary
         vocab = inverted_index_1.get_vocabulary()
 
+        print('Running a few quick tests.....')
+
         # Test a query
         query = Query(indexer.config, inverted_index_1)
-        results = query.get_documents(vocab[0] + ' ' + vocab[1])
+        results = query.get_documents(vocab[150] + ' ' + vocab[151])
+        print('Query Results for {}: '.format(vocab[150] + ' ' + vocab[151]), results)
 
         # Test dice coefficient
         dice = DiceCoefficient(indexer.config, inverted_index_1)
-        dice_coeffs = dice.calculate_dice_coefficients(vocab[1], count=10)
-        print('Top 10 Dice Coefficients', dice_coeffs)
+        dice_coeffs = dice.calculate_dice_coefficients(vocab[150], count=10)
+        print('Top 10 Dice Coefficients for {}: '.format(vocab[150]), dice_coeffs)
     
     if indexer.config.compressed:
         print('Using compressed index')
@@ -54,14 +57,17 @@ def main():
         # Get the vocabulary
         vocab = inverted_index_2.get_vocabulary()
 
+        print('Running a few quick tests.....')
+
         # Test a query
         query = Query(indexer.config, inverted_index_2)
-        results = query.get_documents(vocab[0] + ' ' + vocab[1])
+        results = query.get_documents(vocab[150] + ' ' + vocab[151])
+        print('Query Results for {}: '.format(vocab[150] + ' ' + vocab[151]), results)
 
         # Test dice coefficient
         dice = DiceCoefficient(indexer.config, inverted_index_2)
-        dice_coeffs = dice.calculate_dice_coefficients(vocab[1], count=10)
-        print('Top 10 Dice Coefficients', dice_coeffs)
+        dice_coeffs = dice.calculate_dice_coefficients(vocab[150], count=10)
+        print('Top 10 Dice Coefficients for {}: '.format(vocab[150]), dice_coeffs)
 
 if __name__ == '__main__':
     main()

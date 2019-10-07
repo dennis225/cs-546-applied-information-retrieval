@@ -88,10 +88,11 @@ def run_timing_experiment(config, inverted_index):
         queries = f.read().split('\n')
         print('Experiment on 7 word queries.....')
         start_time = time.time()
-        for query in queries:
-            query_index.get_documents(query)
+        for i in range(100):
+            for query in queries:
+                query_index.get_documents(query)
         end_time = time.time()
-        print('Time Taken: ', end_time - start_time, 'seconds')
+        print('Time Taken: ', (end_time - start_time) / 100, 'seconds')
     
     # Read 14 term queries from disk
     with open('../evaluation/queries_14_terms.txt', 'r') as f:

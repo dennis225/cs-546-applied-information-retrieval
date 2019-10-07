@@ -4,18 +4,28 @@ import utils
 
 
 class InvertedList:
+    """
+    Class which exposes APIs for operation on an inverted list
+    """
     def __init__(self):
         self._postings = []
     
-    # Add a new posting to the inverted list
     def add_posting(self, doc_id, position):
+        """
+        Adds a new posting to the inverted list or modifies it
+        int doc_id: ID of the document to be added or modified
+        int position: Position of the term in the document
+        """
         if not len(self._postings) or self._postings[-1].get_doc_id() != doc_id:
             new_posting = Posting(doc_id)
             self._postings.append(new_posting)
         self._postings[-1].update_term_positions(position)
     
-    # Converts the inverted list to a bytearray and returns the bytearray
     def postings_to_bytearray(self, compressed):
+        """
+        Converts the inverted list to a bytearray and returns the bytearray
+        bool compressed: Flag to choose between a compressed / uncompressed inverted list
+        """
         # Initialize an empty bytearray
         inverted_list_binary = bytearray()
         size_in_bytes = 0
@@ -63,6 +73,12 @@ class InvertedList:
     
     # Converts the bytearray to a postings list
     def bytearray_to_postings(self, inverted_list_binary, compressed, df):
+        """
+        Converts the bytearray to a postings list and sets the postings in the inverted list
+        buffer inverted_list_binary: A buffer for the inverted list read from disk
+        bool compressed: Flag to choose between a compressed / uncompressed inverted list
+        int df: Number of documents in the inverted list - Document Frequency
+        """
         # While fetching positions in a document use tuple instead of list - faster than list
         size_in_bytes = 0
         if not compressed:
@@ -117,4 +133,7 @@ class InvertedList:
     
     # Returns the postings in the inverted list
     def get_postings(self):
+        """
+        Returns the list of postings in the inverted list
+        """
         return self._postings

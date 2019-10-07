@@ -1,9 +1,21 @@
 class DiceCoefficient:
+    """
+    Class to expose methods for Dice's Coefficient calculation
+    """
     def __init__(self, config, inverted_index):
+        """
+        class config: Instance of the Config class
+        class inverted_index: Instance of the InvertedIndex class
+        """
         self.config = config
         self.inverted_index = inverted_index
 
     def count_consecutive_occurrences(self, postings_a, postings_b):
+        """
+        Returns the number of consecutive occurrences of a pair of words (n_ab)
+        list postings_a: List of postings for first word
+        list postings_b: List of postings for second word
+        """
         n_ab = 0
         a = 0
         b = 0
@@ -38,9 +50,13 @@ class DiceCoefficient:
 
     # Returns count number of top (term, dice_coefficient) pairs
     def calculate_dice_coefficients(self, term, count=1):
+        """
+        Returns the top 'count' number of Dice's Doefficients and terms for a term
+        str term: Term to find the Dice's Coefficients for
+        int count: Number of Dice's Coefficients to find, default is 1 (max Dice)
+        """
         inverted_list_a = self.inverted_index.get_inverted_list(term)
         postings_a = inverted_list_a.get_postings()
-        # Number of times term_a occurs in the collection
         n_a = self.inverted_index.get_lookup_table()[term]['ctf']
         dice_coefficients = []
         for term_b in self.inverted_index.get_vocabulary():
@@ -54,4 +70,10 @@ class DiceCoefficient:
         return sorted_dice_coefficients[:count]
     
     def get_dice_coefficient(self, n_a, n_b, n_ab):
+        """
+        Returns the Dice's Coefficient for a term pair
+        int n_a: Number of times term_a occurs in the collection
+        int n_b: Number of times term_b occurs in the collection
+        int n_ab: Number of times term_a and term_b occur consecutively in the collection
+        """
         return n_ab / (n_a + n_b)
