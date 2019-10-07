@@ -48,7 +48,6 @@ class DiceCoefficient:
                 b += 1
         return n_ab
 
-    # Returns count number of top (term, dice_coefficient) pairs
     def calculate_dice_coefficients(self, term, count=1):
         """
         Returns the top 'count' number of Dice's Doefficients and terms for a term

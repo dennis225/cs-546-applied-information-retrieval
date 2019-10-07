@@ -71,7 +71,6 @@ class InvertedList:
             inverted_list_binary, size_in_bytes = utils.vbyte_encode(num_list)
         return (inverted_list_binary, size_in_bytes)
     
-    # Converts the bytearray to a postings list
     def bytearray_to_postings(self, inverted_list_binary, compressed, df):
         """
         Converts the bytearray to a postings list and sets the postings in the inverted list
@@ -131,7 +130,6 @@ class InvertedList:
                 # Update previous doc_id
                 previous_doc_id = doc_id
     
-    # Returns the postings in the inverted list
     def get_postings(self):
         """
         Returns the list of postings in the inverted list
