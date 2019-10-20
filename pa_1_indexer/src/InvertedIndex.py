@@ -16,10 +16,46 @@ class InvertedIndex:
         """
         self.config = config
         self._map = defaultdict(InvertedList)
-        self._lookup_table = {}
+        self._collection_stats = {
+            'totalLength': 0,
+            'numberOfDocs': 0,
+            'averageLength': 0
+        }
         self._docs_meta = {}
+        self._lookup_table = {}
         self._vocabulary = []
         self.compressed = compressed
+    
+    def get_collection_stats(self):
+        """
+        Returns the collection statistics
+        """
+        return self._collection_stats
+    
+    def load_collection_stats(self, collection_stats):
+        """
+        Loads the collection stats dictionary into the index
+        dict collection_stats: Dictionary containing the collection statistics
+        """
+        self._collection_stats = collection_stats
+    
+    def update_collection_stats(self, doc_length=0, average_length=False):
+        """
+        Updates collection statistics
+        int doc_length: Length of the document being added to the inverted index
+        bool average_length: Flag to check whether to update the average doc length
+        """
+        if doc_length:
+            self._collection_stats['totalLength'] += doc_length
+            self._collection_stats['numberOfDocs'] += 1
+        if average_length:
+            self._collection_stats['averageLength'] = self._collection_stats['totalLength'] / self._collection_stats['numberOfDocs']
+    
+    def get_total_docs(self):
+        """
+        Returns the total number of documents in the collection
+        """
+        return self._collection_stats['numberOfDocs']
     
     def get_docs_meta(self):
         """

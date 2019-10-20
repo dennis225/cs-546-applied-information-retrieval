@@ -70,8 +70,10 @@ class Indexer:
                 'sceneLength': len(terms)
             }
             inverted_index.update_docs_meta(doc_id, doc_meta)
+            inverted_index.update_collection_stats(doc_length=doc_meta['sceneLength'])
             for position, term in enumerate(terms):
                 inverted_index.update_map(term, doc_id, position)
+        inverted_index.update_collection_stats(average_length=True)
         inverted_index.load_vocabulary()
         return inverted_index
     
@@ -82,17 +84,18 @@ class Indexer:
         """
         inverted_index = None
         try:
-            with open('../' + self.config.index_dir + '/' + self.config.docs_meta_file_name, 'rb') as docs_meta_file:
-                if not compressed:
-                    with open('../' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.lookup_table_file_name, 'r') as lookup_table_file:
-                        with open('../' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
-                            # Load lookup table, docs meta info and inverted lists(if in_memory is True) from uncompressed version on disk
-                            inverted_index = self.load_inverted_index_in_memory(docs_meta_file, lookup_table_file, inverted_lists_file, False)
-                if compressed:
-                    with open('../' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.lookup_table_file_name, 'r') as lookup_table_file:
-                        with open('../' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
-                            # Load lookup table, docs meta info and inverted lists(if in_memory is True) from compressed version on disk
-                            inverted_index = self.load_inverted_index_in_memory(docs_meta_file, lookup_table_file, inverted_lists_file, True)
+            with open('../' + self.config.index_dir + '/' + self.config.collection_stats_file_name, 'rb') as collection_stats_file:
+                with open('../' + self.config.index_dir + '/' + self.config.docs_meta_file_name, 'rb') as docs_meta_file:
+                    if not compressed:
+                        with open('../' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.lookup_table_file_name, 'r') as lookup_table_file:
+                            with open('../' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
+                                # Load lookup table, docs meta info and inverted lists(if in_memory is True) from uncompressed version on disk
+                                inverted_index = self.load_inverted_index_in_memory(collection_stats_file, docs_meta_file, lookup_table_file, inverted_lists_file, False)
+                    if compressed:
+                        with open('../' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.lookup_table_file_name, 'r') as lookup_table_file:
+                            with open('../' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
+                                # Load lookup table, docs meta info and inverted lists(if in_memory is True) from compressed version on disk
+                                inverted_index = self.load_inverted_index_in_memory(collection_stats_file, docs_meta_file, lookup_table_file, inverted_lists_file, True)
         except Exception as e:
             # Create inverted index
             inverted_index = self.create_inverted_index(compressed)
@@ -102,7 +105,7 @@ class Indexer:
         
         return inverted_index
     
-    def load_inverted_index_in_memory(self, docs_meta_file, lookup_table_file, inverted_lists_file, compressed):
+    def load_inverted_index_in_memory(self, collection_stats_file, docs_meta_file, lookup_table_file, inverted_lists_file, compressed):
         """
         Loads an inverted index in memory, inverted lists are not loaded by default
         buffer docs_meta_file: Buffer for the docs meta file
@@ -110,6 +113,10 @@ class Indexer:
         buffer inverted_lists_file: Buffer for the inverted lists file
         """
         inverted_index = InvertedIndex(self.config, compressed)
+
+        # Load collection statistics
+        collection_stats = json.load(collection_stats_file)
+        inverted_index.load_collection_stats(collection_stats)
 
         # Load meta info for documents
         docs_meta = json.load(docs_meta_file)
@@ -176,6 +183,9 @@ class Indexer:
             with open('../' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.lookup_table_file_name, 'w') as f:
                 json.dump(inverted_index.get_lookup_table(), f)
         
+        with open('../' + self.config.index_dir + '/' + self.config.collection_stats_file_name, 'w') as f:
+            json.dump(inverted_index.get_collection_stats(), f)
+
         with open('../' + self.config.index_dir + '/' + self.config.docs_meta_file_name, 'w') as f:
             json.dump(inverted_index.get_docs_meta(), f)
         

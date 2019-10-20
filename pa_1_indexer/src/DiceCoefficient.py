@@ -56,7 +56,7 @@ class DiceCoefficient:
         """
         inverted_list_a = self.inverted_index.get_inverted_list(term)
         postings_a = inverted_list_a.get_postings()
-        n_a = self.inverted_index.get_lookup_table()[term]['ctf']
+        n_a = self.inverted_index.get_ctf(term)
         dice_coefficients = []
         for term_b in self.inverted_index.get_vocabulary():
             n_b = self.inverted_index.get_ctf(term_b)
