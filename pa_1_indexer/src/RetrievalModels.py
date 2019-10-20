@@ -58,8 +58,7 @@ class RetrievalModels():
         # Average length of a document in the collection
         avdl = self.inverted_index.get_average_doc_length()
         K = self.k1 * ((1 - self.b) + self.b * (dl / avdl))
-        score = math.log((N - ni + 0.5) / ni + 0.5) * ((self.k1 + 1)
-                                                       * fi / (K + fi)) * ((self.k2 + 1) * qfi / (self.k2 + qfi))
+        score = math.log((N - ni + 0.5) / (ni + 0.5)) * ((self.k1 + 1) * fi / (K + fi)) * ((self.k2 + 1) * qfi / (self.k2 + qfi))
         return score
 
     def jelinek_mercer(self, query_term, doc):

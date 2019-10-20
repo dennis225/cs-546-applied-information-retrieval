@@ -41,8 +41,8 @@ def main():
 
         # Test a query
         query = Query(indexer.config, inverted_index_1)
-        results = query.get_documents(vocab[150] + ' ' + vocab[151])
-        print('Query Results for {}: '.format(vocab[150] + ' ' + vocab[151]), results)
+        results = query.get_documents('epithet')
+        print('Query Results for {}: '.format('epithet'), results)
 
         # Test dice coefficient
         dice = DiceCoefficient(indexer.config, inverted_index_1)
@@ -61,8 +61,8 @@ def main():
 
         # Test a query
         query = Query(indexer.config, inverted_index_2)
-        results = query.get_documents(vocab[150] + ' ' + vocab[151])
-        print('Query Results for {}: '.format(vocab[150] + ' ' + vocab[151]), results)
+        results = query.get_documents('epithet')
+        print('Query Results for {}: '.format('epithet'), results)
 
         # Test dice coefficient
         dice = DiceCoefficient(indexer.config, inverted_index_2)

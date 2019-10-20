@@ -148,4 +148,4 @@ def generate_trecrun_file(filename, query_results):
                 col3 = doc['sceneId']
                 col4 = rank + 1
                 col5 = doc['score']
-                f.write('{:4} {} {:35} {:4} {:4.4f} {}\n'.format(col1, col2, col3, col4, col5, col6))
+                f.write('{:4} {:6} {:35} {:4} {:10.4f} {}\n'.format(col1, col2, col3, col4, col5, col6))

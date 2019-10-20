@@ -184,14 +184,14 @@ def run_retrieval_models_test(config, inverted_index):
                                 **retrieval_model_args)
             query_results = []
             for i, query in enumerate(queries):
-                print('Runnin query "{}" using retrieval model "{}"'.format(query, retrieval_model))
+                # print('Running query "{}" using retrieval model "{}"'.format(query, retrieval_model))
                 query_result = {
-                    'topic_number': i + 1,
+                    'topic_number': 'Q' + str(i + 1),
                     'run_tag': oit_identifier + '-' + retrieval_model_method + params,
                     'docs': query_index.get_documents(query)
                 }
                 query_results.append(query_result)
-            trecrun_file_name = retrieval_model_method + output_format
+            trecrun_file_name = '../evaluation/' + retrieval_model_method + output_format
             generate_trecrun_file(trecrun_file_name, query_results)
 
 

@@ -13,7 +13,7 @@ class Query:
     def __init__(self,
                  config,
                  inverted_index,
-                 mode='doc',
+                 mode='term',
                  retrieval_model='dirichlet',
                  count=10,
                  k1=1.2,
@@ -62,15 +62,12 @@ class Query:
         """
         scores = defaultdict(int)
         query_terms = query_string.split()
-        scoring_model = RetrievalModels(
-            query_terms, self.inverted_index, self.retrieval_model, self.k1, self.k2, self.b, self.alphaD, self.mu)
-        # Get the unique terms in the query
-        unique_query_terms = set(query_terms)
+        scoring_model = RetrievalModels(query_terms, self.inverted_index, self.retrieval_model, self.k1, self.k2, self.b, self.alphaD, self.mu)
         results = []
 
         # This is how the book implements
         # inverted_lists = {}
-        # for query_term in unique_query_terms:
+        # for query_term in query_terms:
         #     inverted_lists[query_term] = self.inverted_index.get_inverted_list(query_term)
         # for query_term, inverted_list in inverted_lists.items():
         #     postings = inverted_list.get_postings()
@@ -79,27 +76,29 @@ class Query:
         #         scores[doc_id] += scoring_model.get_score(query_term, posting)
 
         # This is probably a more efficient implementation
-        for query_term in unique_query_terms:
+        for query_term in query_terms:
             inverted_list = self.inverted_index.get_inverted_list(query_term)
             postings = inverted_list.get_postings()
             for posting in postings:
                 doc_id = posting.get_doc_id()
-                dtf = posting.get_dtf()
                 scores[doc_id] += scoring_model.get_score(query_term, posting)
 
         scores_list = scores.items()
         # https://stackoverflow.com/a/613218/6492944 - Sorting a list of tuples by second element in descending order
         # https://stackoverflow.com/questions/54300715/python-3-list-sorting-with-a-tie-breaker
         # When sorting two docs with same scores, they are sorted by document ID to maintain consistency
-        sorted_scores_list = sorted(
-            scores_list, key=lambda x: (x[1], x[0]), reverse=True)
+        sorted_scores_list = sorted(scores_list, key=lambda x: (x[1], x[0]), reverse=True)
 
         # Return the meta info of the top self.count number of documents
         for score in sorted_scores_list[:self.count]:
             doc_id = score[0]
-            doc_meta = deepcopy(self.inverted_index.get_doc_meta(doc_id))
-            doc_meta['score'] = score[1]
-            results.append(doc_meta)
+            new_doc_meta = {}
+            # doc_meta = deepcopy(self.inverted_index.get_doc_meta(doc_id))
+            doc_meta = self.inverted_index.get_doc_meta(doc_id)
+            for key, value in doc_meta.items():
+                new_doc_meta[key] = value
+            new_doc_meta['score'] = score[1]
+            results.append(new_doc_meta)
         return results
 
     def document_at_a_time_retrieval(self, query_string):
@@ -112,41 +111,37 @@ class Query:
         """
         scores = defaultdict(int)
         query_terms = query_string.split()
-        scoring_model = RetrievalModels(
-            query_terms, self.inverted_index, self.retrieval_model, self.k1, self.k2, self.b, self.alphaD, self.mu)
-        # Get the unique terms in the query
-        unique_query_terms = set(query_terms)
+        scoring_model = RetrievalModels(query_terms, self.inverted_index, self.retrieval_model, self.k1, self.k2, self.b, self.alphaD, self.mu)
         results = []
 
         # This is how the book implements
         # inverted_lists = {}
-        # for query_term in unique_query_terms:
+        # for query_term in query_terms:
         #     inverted_lists[query_term] = self.inverted_index.get_inverted_list(query_term)
         # for doc_id in range(1, self.inverted_index.get_total_docs() + 1):
         #     score = 0
-        # for query_term, inverted_list in inverted_lists.items():
-        #     postings = inverted_list.get_postings()
-        #     for posting in postings:
-        #         if posting.get_doc_id() == doc_id:
-        #             score += scoring_model.get_score(query_term, posting)
-        # scores[doc_id] = score
+        #     for query_term, inverted_list in inverted_lists.items():
+        #         postings = inverted_list.get_postings()
+        #         for posting in postings:
+        #             if posting.get_doc_id() == doc_id:
+        #                 score += scoring_model.get_score(query_term, posting)
+        #     if score:
+        #         scores[doc_id] = score
 
         # This is probably a more efficient implementation
-        for query_term in unique_query_terms:
+        for query_term in query_terms:
             inverted_list = self.inverted_index.get_inverted_list(query_term)
             for doc_id in range(1, self.inverted_index.get_total_docs() + 1):
                 postings = inverted_list.get_postings()
                 for posting in postings:
                     if posting.get_doc_id() == doc_id:
-                        scores[doc_id] += scoring_model.get_score(
-                            query_term, posting)
+                        scores[doc_id] += scoring_model.get_score(query_term, posting)
 
         scores_list = scores.items()
         # https://stackoverflow.com/a/613218/6492944 - Sorting a list of tuples by second element in descending order
         # https://stackoverflow.com/questions/54300715/python-3-list-sorting-with-a-tie-breaker
         # When sorting two docs with same scores, they are sorted by document ID to maintain consistency
-        sorted_scores_list = sorted(
-            scores_list, key=lambda x: (x[1], x[0]), reverse=True)
+        sorted_scores_list = sorted(scores_list, key=lambda x: (x[1], x[0]), reverse=True)
 
         # Return the meta info of the top self.count number of documents
         for score in sorted_scores_list[:self.count]:
