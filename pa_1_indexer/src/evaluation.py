@@ -42,23 +42,23 @@ def run_experiments(compressed=0, uncompressed=0):
     elif inverted_index_compressed:
         index = inverted_index_compressed
 
-    # print('Generating 7 word queries..........')
-    # run_query_generator(index, 100, 7)
+    print('Generating 7 word queries..........')
+    run_query_generator(index, 100, 7)
 
-    # print('Generating stats for 7 word queries..........')
-    # run_query_stats_generator(index)
+    print('Generating stats for 7 word queries..........')
+    run_query_stats_generator(index)
 
-    # print('Generating 7 two word phrase queries..........')
-    # run_dice_generator(config, index)
+    print('Generating 7 two word phrase queries..........')
+    run_dice_generator(config, index)
 
-    # print('Running timing experiment for uncompressed index..........')
-    # run_timing_experiment(config, inverted_index_uncompressed)
+    print('Running timing experiment for uncompressed index..........')
+    run_timing_experiment(config, inverted_index_uncompressed)
 
-    # print('Running timing experiment for compressed index..........')
-    # run_timing_experiment(config, inverted_index_compressed)
+    print('Running timing experiment for compressed index..........')
+    run_timing_experiment(config, inverted_index_compressed)
 
-    # print('Generating dataset stats..........')
-    # run_stats_generator(index)
+    print('Generating dataset stats..........')
+    run_stats_generator(index)
 
     print('Running retrieval model tasks')
     run_retrieval_models_tasks(config, index, indexer, top_k=10, judge_queries=[3])
