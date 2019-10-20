@@ -137,3 +137,15 @@ def delta_decode(delta_encoded_positions):
         positions.append(position)
         previous_position = position
     return positions
+
+def generate_trecrun_file(filename, query_results):
+    with open(filename, 'w') as f:
+        for query_result in query_results:
+            col1 = query_result['topic_number']
+            col2 = 'skip'
+            col6 = query_result['run_tag']
+            for rank, doc in enumerate(query_result['docs']):
+                col3 = doc['sceneId']
+                col4 = rank + 1
+                col5 = doc['score']
+                f.write('{:4} {} {:35} {:4} {:4.4f} {}\n'.format(col1, col2, col3, col4, col5, col6))

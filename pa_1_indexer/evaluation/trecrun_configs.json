@@ -1,0 +1,34 @@
+{
+    "oitIdentifier": "nishankjain",
+    "outputFormat": ".trecrun",
+    "tasks": [
+        {
+            "retrievalModelName": "raw_counts",
+            "retrievalModelMethod": "raw-counts",
+            "params": {}
+        },
+        {
+            "retrievalModelName": "bm25",
+            "retrievalModelMethod": "bm25",
+            "params": {
+                "k1": 1.2,
+                "k2": 100,
+                "b": 0.75
+            }
+        },
+        {
+            "retrievalModelName": "jelinek_mercer",
+            "retrievalModelMethod": "ql-jm",
+            "params": {
+                "alphaD": 0.1
+            }
+        },
+        {
+            "retrievalModelName": "dirichlet",
+            "retrievalModelMethod": "ql-dir",
+            "params": {
+                "mu": 1500
+            }
+        }
+    ]
+}

@@ -1,6 +1,5 @@
 # Import built-in libraries
 import os
-import pickle
 import json
 from collections import defaultdict
 
