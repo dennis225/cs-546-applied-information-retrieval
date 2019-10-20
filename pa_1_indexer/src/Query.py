@@ -2,6 +2,7 @@
 from collections import defaultdict
 from copy import deepcopy
 
+# Import src files
 from RetrievalModels import RetrievalModels
 from Posting import Posting
 
@@ -10,11 +11,10 @@ class Query:
     """
     Class which exposes APIs to query an inverted index using various modes and scoring models
     """
-
     def __init__(self,
                  config,
                  inverted_index,
-                 mode='term',
+                 mode='doc',
                  retrieval_model='dirichlet',
                  count=10,
                  k1=1.2,
@@ -25,9 +25,14 @@ class Query:
         """
         class config: Instance of the configuration of the active inverted index
         class inverted_index: The inverted index to use for querying
-        str retrieval_model: Scoring model to be used for querying
         str mode: Type of querying algorithm to use
+        str retrieval_model: Scoring model to be used for querying
         int count: Number of documents to retrieve
+        int k1: Parameter used in BM25
+        int k2: Parameter used in BM25
+        int b: Parameter used in BM25
+        int alphaD: Parameter used in Jelinek-Mercer Smoothing
+        int mu: Parameter used in Dirichlet Smoothing
         """
         self.config = config
         self.inverted_index = inverted_index

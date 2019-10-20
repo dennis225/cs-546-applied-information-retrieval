@@ -35,6 +35,7 @@ class Config:
         str inverted_lists_file_name: Name of the inverted lists file on disk
         str lookup_table_file_name: Name of the lookup table file on disk
         str docs_meta_file_name: Name of the docs meta file on disk
+        str collection_stats_file_name: Name of the collection stats file on disk
         """
         self.data_file_name = data_file_name
         self.compressed = int(compressed)

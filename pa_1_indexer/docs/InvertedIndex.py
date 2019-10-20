@@ -8,6 +8,39 @@ class InvertedIndex:
         bool compressed: Flag to choose between a compressed / uncompressed index
         """
     
+    def get_collection_stats(self):
+        """
+        Returns the collection statistics
+        """
+    
+    def load_collection_stats(self, collection_stats):
+        """
+        Loads the collection stats dictionary into the index
+        dict collection_stats: Dictionary containing the collection statistics
+        """
+    
+    def update_collection_stats(self, doc_length=0, average_length=False):
+        """
+        Updates collection statistics
+        int doc_length: Length of the document being added to the inverted index
+        bool average_length: Flag to check whether to update the average doc length
+        """
+    
+    def get_collection_length(self):
+        """
+        Returns the total length of all documents in the collection
+        """
+    
+    def get_total_docs(self):
+        """
+        Returns the total number of documents in the collection
+        """
+    
+    def get_average_doc_length(self):
+        """
+        Returns the average length of a document in the collection
+        """
+    
     def get_docs_meta(self):
         """
         Returns the docs meta dictionary
@@ -30,6 +63,12 @@ class InvertedIndex:
         """
         Returns the meta info of the document with the given doc_id
         int doc_id: ID of the active document
+        """
+    
+    def get_doc_length(self, doc_id):
+        """
+        Returns the length of a document with the given doc_id
+        int doc_id: ID of the document to lookup
         """
     
     def get_map(self):

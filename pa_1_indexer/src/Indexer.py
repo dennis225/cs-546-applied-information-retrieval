@@ -107,6 +107,7 @@ class Indexer:
     def load_inverted_index_in_memory(self, collection_stats_file, docs_meta_file, lookup_table_file, inverted_lists_file, compressed):
         """
         Loads an inverted index in memory, inverted lists are not loaded by default
+        buffer collection_stats_file: Buffer for the collection stats file
         buffer docs_meta_file: Buffer for the docs meta file
         buffer lookup_table_file: Buffer for the lookup table file
         buffer inverted_lists_file: Buffer for the inverted lists file
