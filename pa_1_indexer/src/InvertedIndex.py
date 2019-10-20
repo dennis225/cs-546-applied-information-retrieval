@@ -51,11 +51,23 @@ class InvertedIndex:
         if average_length:
             self._collection_stats['averageLength'] = self._collection_stats['totalLength'] / self._collection_stats['numberOfDocs']
     
+    def get_collection_length(self):
+        """
+        Returns the total length of all documents in the collection
+        """
+        return self._collection_stats['totalLength']
+    
     def get_total_docs(self):
         """
         Returns the total number of documents in the collection
         """
         return self._collection_stats['numberOfDocs']
+    
+    def get_average_doc_length(self):
+        """
+        Returns the average length of a document in the collection
+        """
+        return self._collection_stats['averageLength']
     
     def get_docs_meta(self):
         """
@@ -81,9 +93,16 @@ class InvertedIndex:
     def get_doc_meta(self, doc_id):
         """
         Returns the meta info of the document with the given doc_id
-        int doc_id: ID of the active document
+        int doc_id: ID of the document to lookup
         """
         return self._docs_meta[str(doc_id)]
+    
+    def get_doc_length(self, doc_id):
+        """
+        Returns the length of a document with the given doc_id
+        int doc_id: ID of the document to lookup
+        """
+        return self._docs_meta[str(doc_id)]['sceneLength']
     
     def get_map(self):
         """
