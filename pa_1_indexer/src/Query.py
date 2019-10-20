@@ -3,6 +3,7 @@ from collections import defaultdict
 from copy import deepcopy
 
 from RetrievalModels import RetrievalModels
+from Posting import Posting
 
 
 class Query:
@@ -114,28 +115,22 @@ class Query:
         scoring_model = RetrievalModels(query_terms, self.inverted_index, self.retrieval_model, self.k1, self.k2, self.b, self.alphaD, self.mu)
         results = []
 
-        # This is how the book implements
-        # inverted_lists = {}
-        # for query_term in query_terms:
-        #     inverted_lists[query_term] = self.inverted_index.get_inverted_list(query_term)
-        # for doc_id in range(1, self.inverted_index.get_total_docs() + 1):
-        #     score = 0
-        #     for query_term, inverted_list in inverted_lists.items():
-        #         postings = inverted_list.get_postings()
-        #         for posting in postings:
-        #             if posting.get_doc_id() == doc_id:
-        #                 score += scoring_model.get_score(query_term, posting)
-        #     if score:
-        #         scores[doc_id] = score
-
-        # This is probably a more efficient implementation
-        for query_term in query_terms:
-            inverted_list = self.inverted_index.get_inverted_list(query_term)
-            for doc_id in range(1, self.inverted_index.get_total_docs() + 1):
+        inverted_lists = {}
+        for query_term in set(query_terms):
+            inverted_lists[query_term] = self.inverted_index.get_inverted_list(query_term)
+        for doc_id in range(1, self.inverted_index.get_total_docs() + 1):
+            score = 0
+            for query_term, inverted_list in inverted_lists.items():
                 postings = inverted_list.get_postings()
                 for posting in postings:
                     if posting.get_doc_id() == doc_id:
-                        scores[doc_id] += scoring_model.get_score(query_term, posting)
+                        score += scoring_model.get_score(query_term, posting)
+                        break
+                else:
+                    posting_without_term_occurrence = Posting(doc_id)
+                    score += scoring_model.get_score(query_term, posting_without_term_occurrence)
+            if score:
+                scores[doc_id] = score
 
         scores_list = scores.items()
         # https://stackoverflow.com/a/613218/6492944 - Sorting a list of tuples by second element in descending order

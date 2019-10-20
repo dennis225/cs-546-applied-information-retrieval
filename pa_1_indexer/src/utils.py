@@ -2,6 +2,7 @@
 import sys
 import random
 import struct
+import json
 from collections import defaultdict
 
 
@@ -141,7 +142,7 @@ def delta_decode(delta_encoded_positions):
 def generate_trecrun_file(filename, query_results):
     with open(filename, 'w') as f:
         for query_result in query_results:
-            col1 = query_result['topic_number']
+            col1 = 'Q' + str(query_result['topic_number'])
             col2 = 'skip'
             col6 = query_result['run_tag']
             for rank, doc in enumerate(query_result['docs']):
@@ -149,3 +150,34 @@ def generate_trecrun_file(filename, query_results):
                 col4 = rank + 1
                 col5 = doc['score']
                 f.write('{:4} {:6} {:35} {:4} {:10.4f} {}\n'.format(col1, col2, col3, col4, col5, col6))
+
+def get_scenes(data):
+    scenes = {}
+    for scene in data['corpus']:
+        scene_id = scene['sceneId']
+        scene_text = scene['text']
+        scenes[scene_id] = scene_text
+    return scenes
+
+def generate_trecrun_judgments_file(filename, query_results, scenes, topK, judge_queries):
+    with open(filename, 'w') as f:
+        for query_result in query_results:
+            topic_number = query_result['topic_number']
+            if topic_number in judge_queries:
+                f.write('Q' + str(topic_number) + ': ' + query_result['query'] + '\n\n\n')
+                for i, doc in enumerate(query_result['docs'][:topK]):
+                    rank = i + 1
+                    scene_id = doc['sceneId']
+                    f.write('Rank: ' + str(rank) + ' Score: ' + str(doc['score']) + ' Scene ID: ' + scene_id + '\n')
+                    scene = scenes[scene_id]
+                    f.write(scene + '\n\n')
+                f.write('\n\n\n\n')
+
+def generate_final_judgments_file(filename, query_results, topK, judge_queries):
+    with open(filename, 'a') as f:
+        for query_result in query_results:
+            topic_number = query_result['topic_number']
+            if topic_number in judge_queries:
+                for i, doc in enumerate(query_result['docs'][:topK]):
+                    scene_id = doc['sceneId']
+                    f.write(scene_id + '\n')

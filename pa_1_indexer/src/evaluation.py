@@ -60,8 +60,11 @@ def run_experiments(compressed=0, uncompressed=0):
     # print('Generating dataset stats..........')
     # run_stats_generator(index)
 
-    print('Running retrieval model tests')
-    run_retrieval_models_test(config, index)
+    print('Running retrieval model tasks')
+    run_retrieval_models_tasks(config, index, indexer, top_k=10, judge_queries=[3])
+
+    # print('Running retrieval model judgments')
+    # run_retrieval_models_judgments(config, index)
 
     print('Finished evaluation!')
 
@@ -157,17 +160,16 @@ def run_stats_generator(index):
     print('Average Scene Length: ', average_scene_length)
 
 
-def run_retrieval_models_test(config, inverted_index):
+def run_retrieval_models_tasks(config, inverted_index, indexer, top_k=10, judge_queries=[3]):
     queries = None
     # Read the retrieval model queries from disk
     with open('../evaluation/queries_retrieval_model.txt', 'r') as f:
         queries = f.read().split('\n')
-        print('Experiment on retrieval model queries.....')
 
     with open('../evaluation/trecrun_configs.json', 'r') as f:
         trecrun_configs = json.load(f)
         oit_identifier = trecrun_configs['oitIdentifier']
-        output_format = trecrun_configs['outputFormat']
+        trecrun_output_format = trecrun_configs['outputFormat']
         tasks = trecrun_configs['tasks']
         for task in tasks:
             retrieval_model = task['retrievalModelName']
@@ -178,21 +180,29 @@ def run_retrieval_models_test(config, inverted_index):
                 params = '-' + params
             query_index = Query(config,
                                 inverted_index,
-                                mode='term',
+                                mode='doc',
                                 retrieval_model=retrieval_model,
                                 count=inverted_index.get_total_docs(),
                                 **retrieval_model_args)
             query_results = []
             for i, query in enumerate(queries):
-                # print('Running query "{}" using retrieval model "{}"'.format(query, retrieval_model))
                 query_result = {
-                    'topic_number': 'Q' + str(i + 1),
+                    'query': query,
+                    'topic_number': i + 1,
                     'run_tag': oit_identifier + '-' + retrieval_model_method + params,
                     'docs': query_index.get_documents(query)
                 }
                 query_results.append(query_result)
-            trecrun_file_name = '../evaluation/' + retrieval_model_method + output_format
+            
+            trecrun_file_name = '../evaluation/' + retrieval_model_method + trecrun_output_format
             generate_trecrun_file(trecrun_file_name, query_results)
+
+            scenes = get_scenes(indexer.load_data())
+            trecrun_judgments_file_name = '../evaluation/' + retrieval_model_method + '_judgments.txt'
+            generate_trecrun_judgments_file(trecrun_judgments_file_name, query_results, scenes, top_k, judge_queries)
+
+            final_judgments_file_name = '../evaluation/' + 'judgments.txt'
+            generate_final_judgments_file(final_judgments_file_name, query_results, top_k, judge_queries)
 
 
 if __name__ == '__main__':

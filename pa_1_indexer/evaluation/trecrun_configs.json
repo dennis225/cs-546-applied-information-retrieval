@@ -3,11 +3,6 @@
     "outputFormat": ".trecrun",
     "tasks": [
         {
-            "retrievalModelName": "raw_counts",
-            "retrievalModelMethod": "raw-counts",
-            "params": {}
-        },
-        {
             "retrievalModelName": "bm25",
             "retrievalModelMethod": "bm25",
             "params": {

@@ -21,21 +21,14 @@ class RetrievalModels():
         self.mu = mu
 
     def get_score(self, query_term, doc):
-        if self.retrieval_model == 'raw_counts':
-            return self.raw_counts(doc)
-        elif self.retrieval_model == 'bm25':
-            return self.bm25(query_term, doc)
-        elif self.retrieval_model == 'jelinek_mercer':
-            return self.jelinek_mercer(query_term, doc)
-        elif self.retrieval_model == 'dirichlet':
-            return self.dirichlet(query_term, doc)
+        return self.__getattribute__(self.retrieval_model)(query_term, doc)
 
-    def raw_counts(self, doc):
+    def raw_counts(self, query_term, doc):
         """
         Returns a raw count score for a document - the dtf of the document
         class doc: Instance of Posting to be scored
         """
-        return doc.get_dtf()
+        return doc.get_dtf() * self.query_terms.count(query_term)
 
     def bm25(self, query_term, doc):
         """
@@ -76,9 +69,8 @@ class RetrievalModels():
         cqi = self.inverted_index.get_ctf(query_term)
         # Total length of all documents in the collection
         cl = self.inverted_index.get_collection_length()
-        score = math.log(((1 - self.alphaD) * (fqiD / dl)) +
-                         (self.alphaD * (cqi / cl)))
-        return score
+        score = math.log(((1 - self.alphaD) * (fqiD / dl)) + (self.alphaD * (cqi / cl)))
+        return score * self.query_terms.count(query_term)
 
     def dirichlet(self, query_term, doc):
         """
@@ -96,4 +88,4 @@ class RetrievalModels():
         # Total length of all documents in the collection
         cl = self.inverted_index.get_collection_length()
         score = math.log((fqiD + (self.mu * (cqi / cl))) / (dl + self.mu))
-        return score
+        return score * self.query_terms.count(query_term)
