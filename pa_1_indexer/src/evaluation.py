@@ -63,9 +63,6 @@ def run_experiments(compressed=0, uncompressed=0):
     print('Running retrieval model tasks')
     run_retrieval_models_tasks(config, index, indexer, top_k=10, judge_queries=[3])
 
-    # print('Running retrieval model judgments')
-    # run_retrieval_models_judgments(config, index)
-
     print('Finished evaluation!')
 
 
@@ -162,6 +159,10 @@ def run_stats_generator(index):
 
 def run_retrieval_models_tasks(config, inverted_index, indexer, top_k=10, judge_queries=[3]):
     queries = None
+
+    final_judgments_file_name = '../evaluation/' + 'judgments.txt'
+    open(final_judgments_file_name, 'w').close()
+
     # Read the retrieval model queries from disk
     with open('../evaluation/queries_retrieval_model.txt', 'r') as f:
         queries = f.read().split('\n')
@@ -201,7 +202,6 @@ def run_retrieval_models_tasks(config, inverted_index, indexer, top_k=10, judge_
             trecrun_judgments_file_name = '../evaluation/' + retrieval_model_method + '_judgments.txt'
             generate_trecrun_judgments_file(trecrun_judgments_file_name, query_results, scenes, top_k, judge_queries)
 
-            final_judgments_file_name = '../evaluation/' + 'judgments.txt'
             generate_final_judgments_file(final_judgments_file_name, query_results, top_k, judge_queries)
 
 
