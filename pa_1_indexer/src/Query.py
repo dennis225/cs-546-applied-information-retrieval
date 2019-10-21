@@ -125,16 +125,18 @@ class Query:
             inverted_lists[query_term] = self.inverted_index.get_inverted_list(query_term)
         for doc_id in range(1, self.inverted_index.get_total_docs() + 1):
             score = 0
+            at_least_one_term_present = False
             for query_term, inverted_list in inverted_lists.items():
                 postings = inverted_list.get_postings()
                 for posting in postings:
                     if posting.get_doc_id() == doc_id:
+                        at_least_one_term_present = True
                         score += scoring_model.get_score(query_term, posting)
                         break
                 else:
                     posting_without_term_occurrence = Posting(doc_id)
                     score += scoring_model.get_score(query_term, posting_without_term_occurrence)
-            if score:
+            if score and at_least_one_term_present:
                 scores[doc_id] = score
 
         scores_list = scores.items()
