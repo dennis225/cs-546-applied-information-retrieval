@@ -1,4 +1,4 @@
-# Programming Assignment: Indexer
+# Indexing, Querying, Inference and other stuff
 
 ### Dependencies
 There are no dependencies to be downloaded, all libraries used are bundled in Python
