@@ -59,44 +59,93 @@ class QueryNode:
 
 
 class BeliefNode(QueryNode):
-    def __init__(self, childNodes):
+    def __init__(self, child_nodes):
+        self.child_nodes = child_nodes
         super().__init__()
-        self.childNodes = childNodes
+    
+    def has_more(self):
+        return any(child_node.has_more() for child_node in self.child_nodes)
+    
+    def next_candidate(self):
+        return min(child_node.next_candidate() for child_node in self.child_nodes)
+    
+    def skip_to(self, doc_id):
+        for child_node in self.child_nodes:
+            child_node.skip_to(doc_id)
 
 
 class NotNode(BeliefNode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, child_nodes):
+        super().__init__(child_nodes)
+    
+    def score(self, doc_id):
+        child_node = self.child_nodes[0]
+        probability = math.exp(child_node.score(doc_id))
+        score = math.log(1 - probability)
+        return score
 
 
 class OrNode(BeliefNode):
-    def __init__(self):
-        super().__init__()
-
-
-class AndNode(BeliefNode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, child_nodes):
+        super().__init__(child_nodes)
+    
+    def score(self, doc_id):
+        total_probability = 0
+        for child_node in self.child_nodes:
+            probability = math.log(1 - math.exp(child_node.score(doc_id)))
+            total_probability += probability
+        return math.log(1 - math.exp(total_probability))
 
 
 class WeightedAndNode(BeliefNode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, child_nodes, weights):
+        self.weights = weights
+        super().__init__(child_nodes)
+    
+    def score(self, doc_id):
+        total_probability = 0
+        for i, child_node in enumerate(self.child_nodes):
+            weight = self.weights[i]
+            probability = weight * child_node.score(doc_id)
+            total_probability += probability
+        return total_probability
 
 
-class MaxNode(BeliefNode):
-    def __init__(self):
-        super().__init__()
-
-
-class SumNode(BeliefNode):
-    def __init__(self):
-        super().__init__()
+class AndNode(WeightedAndNode):
+    def __init__(self, child_nodes):
+        weights = [1] * len(child_nodes)
+        super().__init__(child_nodes, weights)
 
 
 class WeightedSumNode(BeliefNode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, child_nodes, weights):
+        self.weights = weights
+        super().__init__(child_nodes)
+    
+    def score(self, doc_id):
+        total_probability = 0
+        total_weight = 0
+        for i, child_node in enumerate(self.child_nodes):
+            weight = self.weights[i]
+            probability = weight * math.exp(child_node.score(doc_id))
+            total_probability += probability
+            total_weight += weight
+        return math.log(total_probability / total_weight)
+
+
+class SumNode(WeightedSumNode):
+    def __init__(self, child_nodes):
+        weights = [1] * len(child_nodes)
+        super().__init__(child_nodes, weights)
+
+
+class MaxNode(BeliefNode):
+    def __init__(self, child_nodes):
+        super().__init__(child_nodes)
+    
+    def score(self, doc_id):
+        probabilities = [child_node.score(doc_id) for child_node in self.child_nodes]
+        return max(probabilities)
     
 
 class ProximityNode(QueryNode):
@@ -105,9 +154,6 @@ class ProximityNode(QueryNode):
         self.inverted_list = self.get_inverted_list()
         self.postings = self.get_postings()
         self.posting_index = 0
-    
-    def get_postings(self):
-        return self.inverted_list.get_postings()
     
     def has_more(self):
         return self.posting_index < len(self.postings)
@@ -124,6 +170,9 @@ class ProximityNode(QueryNode):
     def skip_to(self, doc_id):
         while self.posting_index < len(self.postings) and self.next_candidate() < doc_id:
             self.posting_index += 1
+    
+    def get_postings(self):
+        return self.inverted_list.get_postings()
     
     def get_positions(self):
         return self.postings[self.posting_index].get_term_positions()
@@ -314,15 +363,55 @@ class BooleanAndNode(UnorderedWindowNode):
 
 
 class FilterNode(QueryNode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, inverted_index, query_node, proximity_node):
+        self.query_node = query_node
+        self.proximity_node = proximity_node
+        super().__init__(inverted_index)
+    
+    def skip_to(self, doc_id):
+        self.query_node.skip_to(doc_id)
+        self.proximity_node.skip_to(doc_id)
 
 
 class FilterRequire(FilterNode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, inverted_index, query_node, proximity_node):
+        super().__init__(inverted_index, query_node, proximity_node)
+    
+    def has_more(self):
+        return self.query_node.has_more() and self.proximity_node.has_more()
+    
+    def next_candidate(self):
+        return max(self.query_node.next_candidate(), self.proximity_node.next_candidate())
+    
+    def score(self, doc_id):
+        # Move the proximity node to the given doc_id
+        self.proximity_node.skip_to(doc_id)
+
+        # Check if the proximity node was able to move to the given doc_id
+        # If yes, score the document
+        if self.proximity_node.next_candidate() == doc_id:
+            return self.query_node.score(doc_id)
+        # Otherwise return a score of 0
+        return 0
 
 
 class FilterReject(FilterNode):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, inverted_index, query_node, proximity_node):
+        super().__init__(inverted_index, query_node, proximity_node)
+    
+    def has_more(self):
+        return self.query_node.has_more()
+    
+    def next_candidate(self):
+        return self.query_node.next_candidate()
+    
+    def score(self, doc_id):
+        # Move the proximity node to the given doc_id
+        self.proximity_node.skip_to(doc_id)
+
+        # Check if the proximity node was able to move to the given doc_id
+        # If yes, return a score of 0
+        if self.proximity_node.next_candidate() == doc_id:
+            return 0
+        # Otherwise score the document
+        return self.query_node.score(doc_id)
