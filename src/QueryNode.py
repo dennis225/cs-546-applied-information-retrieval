@@ -15,7 +15,7 @@ class QueryNode:
         self.ctf = 0
         self.inverted_index = inverted_index
         self.inverted_list = InvertedList()
-        self.mu = 1500
+        self.mu = 2000
     
     def get_doc_score(self, doc):
         """
@@ -118,17 +118,20 @@ class TermNode(ProximityNode):
         self.term_posting_index = 0
     
     def has_more_postings(self):
-        return self.term_posting_index < len(self.postings) - 1
+        return self.term_posting_index < len(self.postings)
     
     def get_doc_id(self):
-        return self.postings[self.term_posting_index].get_doc_id()
+        # When the posting list pointer is moved to a new doc id
+        # it is possible that the pointer moves past the end of the postings list
+        # When it does, return a doc id of -1 because there is no corresponding
+        # doc id at that position in the postings list
+        if self.term_posting_index < len(self.postings):
+            return self.postings[self.term_posting_index].get_doc_id()
+        return -1
     
     def move_to_doc_id(self, doc_id):
-        while self.term_posting_index < len(self.postings) - 1:
-            if self.get_doc_id() < doc_id:
-                self.term_posting_index += 1
-            else:
-                break
+        while self.term_posting_index < len(self.postings) and self.get_doc_id() < doc_id:
+            self.term_posting_index += 1
 
     def get_term_positions(self):
         return self.postings[self.term_posting_index].get_term_positions()
@@ -167,14 +170,11 @@ class WindowNode(ProximityNode):
             
             # Check if all terms are on the same doc
             if all_term_nodes_on_same_doc:
-                # print('All terms on Doc ID: ', max_doc_id)
                 # Get all term positions in the doc
                 term_positions = [term_node.get_term_positions() for term_node in self.term_nodes]
-                # print(term_positions)
                 
                 # Find the window start positions (there could be multiple windows with all query terms)
                 window_start_positions = self.get_window_start_positions(term_positions)
-                # print('Window Start Positions: ', window_start_positions)
 
                 # Add the window start positions to the doc_window_positions for the query
                 doc_window_positions[max_doc_id] = window_start_positions
@@ -189,8 +189,13 @@ class WindowNode(ProximityNode):
     def get_inverted_list_for_query_terms(self):
         doc_window_positions = self.get_docs_with_query_terms_in_window()
         for doc_id, positions in doc_window_positions.items():
-            self.inverted_list.add_posting_with_positions(doc_id, positions)
-            self.ctf += len(positions)
+            if positions:
+                self.inverted_list.add_posting_with_positions(doc_id, positions)
+                self.ctf += len(positions)
+            # else:
+                # Background Probability when the document has all the terms in the query
+                # but not in the specified window
+                # self.ctf += 1
 
 
 class OrderedWindowNode(WindowNode):
@@ -200,7 +205,6 @@ class OrderedWindowNode(WindowNode):
     
     def get_window_start_positions(self, term_positions):
         positions = list()
-        print('Getting ordered window positions')
 
         num_terms = len(term_positions)
         if num_terms == 1:
@@ -260,7 +264,6 @@ class UnorderedWindowNode(WindowNode):
     
     def get_window_start_positions(self, term_positions):
         positions = list()
-        print('Getting unordered window positions')
 
         if len(term_positions) == 1:
             return term_positions[0]
