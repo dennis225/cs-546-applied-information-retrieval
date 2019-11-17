@@ -251,57 +251,64 @@ class OrderedWindowNode(WindowNode):
         super().__init__(inverted_index, term_nodes, window_size)
     
     def get_window_start_positions(self, term_positions):
-        positions = list()
+        window_start_positions = list()
 
         num_terms = len(term_positions)
         if num_terms == 1:
             return term_positions[0]
+        
+        term_positions_pointers = [0] * num_terms
+        current_term = 0
 
-        indices = [0] * num_terms
-        left = term_positions[0][0]
-        prev = left
-
-        cur_word = 1
-        while cur_word < num_terms and indices[cur_word] < len(term_positions[cur_word]):
-            cur_word_index = indices[cur_word]
-            while cur_word_index < len(term_positions[cur_word]) and \
-                    term_positions[cur_word][cur_word_index] < prev + self.window_size:
-                cur_word_index += 1
-            if cur_word_index < len(term_positions[cur_word]):
-                # It is either within the window, or has crossed it
-                indices[cur_word] = cur_word_index
-                if term_positions[cur_word][cur_word_index] - prev <= self.window_size:
-                    if cur_word == num_terms - 1:
-                        positions.append(left)
-                        cur_word = 0
-                        indices[cur_word] += 1
-                        if indices[cur_word] < len(term_positions[cur_word]):
-                            cur_word_index = indices[cur_word]
-                            prev = term_positions[cur_word][cur_word_index]
-                            left = prev
-                            cur_word = 1
+        for window_start_position in term_positions[current_term]:
+            # Set the previous term position as the start of the window
+            prev_term_position = window_start_position
+            # Move the pointer of the first term by one
+            term_positions_pointers[current_term] += 1
+            # Move to the next term for looping again
+            current_term = 1
+            # While we haven't reached the end of terms and while there are more positions in the current term's positions list
+            while current_term < num_terms and term_positions_pointers[current_term] < len(term_positions[current_term]):
+                # Get the current term's current position pointer
+                current_term_pointer = term_positions_pointers[current_term]
+                # Move the current term's pointer either inside the window of the previous term or beyond it
+                while current_term_pointer < len(term_positions[current_term]) and term_positions[current_term][current_term_pointer] < prev_term_position + self.window_size:
+                    current_term_pointer += 1
+                # If the pointer hasn't reached the end of the current term's positions list, continue
+                if current_term_pointer < len(term_positions[current_term]):
+                    term_positions_pointers[current_term] = current_term_pointer
+                    # If the current term's current position is outside the window
+                    if term_positions[current_term][current_term_pointer] - prev_term_position > self.window_size:
+                        # Go back to the previous term and do this again
+                        current_term -= 1
+                        # If the current term is not the first term, continue
+                        if current_term != 0:
+                            current_term_pointer = term_positions_pointers[current_term]
+                            prev_term_position = term_positions[current_term][current_term_pointer]
+                        # If it is the first term, break to get a new window
                         else:
                             break
+                    # If the current term's current position is inside the window, continue
                     else:
-                        prev = term_positions[cur_word][cur_word_index]
-                        cur_word += 1
+                        # Check if this is the last term
+                        # If yes, we have found a window with all words in it
+                        if current_term == num_terms - 1:
+                            # Add this window to the window_start_positions list
+                            window_start_positions.append(window_start_position)
+                            # Reset the current term to the first term
+                            current_term = 0
+                            break
+                        # If this is not the last term, move the window to the current term's current position
+                        # And then move to the next term and do this again
+                        else:
+                            prev_term_position = term_positions[current_term][current_term_pointer]
+                            current_term += 1
+                # Otherwise break out of the loop as it's not possible for the following words to be in this window as well
+                # And return an empty list
                 else:
-                    cur_word -= 1
-                    if cur_word == 0:
-                        indices[cur_word] += 1
-                        if indices[cur_word] < len(term_positions[cur_word]):
-                            cur_word_index = indices[cur_word]
-                            prev = term_positions[cur_word][cur_word_index]
-                            left = prev
-                            cur_word = 1
-                        else:
-                            break
-                    else:
-                        cur_word_index = indices[cur_word]
-                        prev = term_positions[cur_word][cur_word_index]
-            else:
-                break
-        return positions
+                    current_term = 0
+                    break
+        return window_start_positions
 
 
 class UnorderedWindowNode(WindowNode):
