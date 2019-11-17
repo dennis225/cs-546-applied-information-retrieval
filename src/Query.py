@@ -123,7 +123,7 @@ class Query:
         inverted_lists = {}
         for query_term in set(query_terms):
             inverted_lists[query_term] = self.inverted_index.get_inverted_list(query_term)
-        for doc_id in range(1, self.inverted_index.get_total_docs() + 1):
+        for doc_id in range(0, self.inverted_index.get_total_docs()):
             score = 0
             at_least_one_term_present = False
             for query_term, inverted_list in inverted_lists.items():

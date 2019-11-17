@@ -1,4 +1,5 @@
 # Import built-in libraries
+import os
 from collections import defaultdict
 
 # Import src files
@@ -25,6 +26,7 @@ class InvertedIndex:
         self._lookup_table = {}
         self._vocabulary = []
         self.compressed = compressed
+        self.root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
     def get_collection_stats(self):
         """
@@ -231,7 +233,7 @@ class InvertedIndex:
             dir_name =  self.config.uncompressed_dir
             if self.compressed:
                 dir_name =  self.config.compressed_dir
-            with open('../' + self.config.index_dir + '/' + dir_name + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
+            with open(self.root_dir + '/' + self.config.index_dir + '/' + dir_name + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
                 inverted_list_binary = self.read_inverted_list_from_file(inverted_lists_file, term_stats['posting_list_position'], term_stats['posting_list_size'])
                 inverted_list = InvertedList()
                 inverted_list.bytearray_to_postings(inverted_list_binary, self.compressed, term_stats['df'])

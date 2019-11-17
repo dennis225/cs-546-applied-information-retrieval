@@ -17,6 +17,7 @@ class Indexer:
         """
         Namespace config: Arguments passed on the command line
         """
+        self.root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         stored_config = self.get_config(new_config)
         stored_config.update(vars(new_config))
         self.config = Config(**stored_config)
@@ -28,7 +29,7 @@ class Indexer:
         """
         config = {}
         try:
-            with open('../' + params.index_dir + '/' + params.config_file_name, 'r') as f:
+            with open(self.root_dir + '/' + params.index_dir + '/' + params.config_file_name, 'r') as f:
                 # Load config from disk
                 config = json.load(f)
         except:
@@ -41,7 +42,7 @@ class Indexer:
         """
         Loads a data file from the disk for any extension, currently only .json is supported
         """
-        data_file = '../' + self.config.data_dir + '/' + self.config.data_file_name
+        data_file = self.root_dir + '/' + self.config.data_dir + '/' + self.config.data_file_name
         with open(data_file, 'r') as f:
             root, ext = os.path.splitext(data_file)
             # Check if file extension is .json
@@ -56,7 +57,7 @@ class Indexer:
         """
         inverted_index = InvertedIndex(self.config, compressed)
         data = self.load_data()
-        doc_id = 0
+        doc_id = -1
         for scene in data['corpus']:
             doc_id += 1
             scene_text = scene['text']
@@ -83,16 +84,16 @@ class Indexer:
         """
         inverted_index = None
         try:
-            with open('../' + self.config.index_dir + '/' + self.config.collection_stats_file_name, 'rb') as collection_stats_file:
-                with open('../' + self.config.index_dir + '/' + self.config.docs_meta_file_name, 'rb') as docs_meta_file:
+            with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.collection_stats_file_name, 'rb') as collection_stats_file:
+                with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.docs_meta_file_name, 'rb') as docs_meta_file:
                     if not compressed:
-                        with open('../' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.lookup_table_file_name, 'r') as lookup_table_file:
-                            with open('../' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
+                        with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.lookup_table_file_name, 'r') as lookup_table_file:
+                            with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
                                 # Load lookup table, docs meta info and inverted lists(if in_memory is True) from uncompressed version on disk
                                 inverted_index = self.load_inverted_index_in_memory(collection_stats_file, docs_meta_file, lookup_table_file, inverted_lists_file, False)
                     if compressed:
-                        with open('../' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.lookup_table_file_name, 'r') as lookup_table_file:
-                            with open('../' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
+                        with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.lookup_table_file_name, 'r') as lookup_table_file:
+                            with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
                                 # Load lookup table, docs meta info and inverted lists(if in_memory is True) from compressed version on disk
                                 inverted_index = self.load_inverted_index_in_memory(collection_stats_file, docs_meta_file, lookup_table_file, inverted_lists_file, True)
         except Exception as e:
@@ -158,38 +159,38 @@ class Indexer:
         class inverted_index: Instance of the inverted index being used
         """
         # Create the index directory if it doesn't exist
-        if not os.path.exists('../' + self.config.index_dir):
-            os.mkdir('../' + self.config.index_dir)
+        if not os.path.exists(self.root_dir + '/' + self.config.index_dir):
+            os.mkdir(self.root_dir + '/' + self.config.index_dir)
         
         if not self.config.compressed:
             # Create uncompressed index directory if it doesn't exist
-            if not os.path.exists('../' + self.config.index_dir + '/' + self.config.uncompressed_dir):
-                os.mkdir('../' + self.config.index_dir + '/' + self.config.uncompressed_dir)
+            if not os.path.exists(self.root_dir + '/' + self.config.index_dir + '/' + self.config.uncompressed_dir):
+                os.mkdir(self.root_dir + '/' + self.config.index_dir + '/' + self.config.uncompressed_dir)
             
-            with open('../' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.inverted_lists_file_name, 'wb') as f:
+            with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.inverted_lists_file_name, 'wb') as f:
                 self.dump_inverted_lists_to_disk(f, inverted_index)
             
-            with open('../' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.lookup_table_file_name, 'w') as f:
+            with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.uncompressed_dir + '/' + self.config.lookup_table_file_name, 'w') as f:
                 json.dump(inverted_index.get_lookup_table(), f)
         
         if self.config.compressed:
             # Create compressed index directory if it doesn't exist
-            if not os.path.exists('../' + self.config.index_dir + '/' + self.config.compressed_dir):
-                    os.mkdir('../' + self.config.index_dir + '/' + self.config.compressed_dir)
+            if not os.path.exists(self.root_dir + '/' + self.config.index_dir + '/' + self.config.compressed_dir):
+                    os.mkdir(self.root_dir + '/' + self.config.index_dir + '/' + self.config.compressed_dir)
             
-            with open('../' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.inverted_lists_file_name, 'wb') as f:
+            with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.inverted_lists_file_name, 'wb') as f:
                 self.dump_inverted_lists_to_disk(f, inverted_index)
             
-            with open('../' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.lookup_table_file_name, 'w') as f:
+            with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.compressed_dir + '/' + self.config.lookup_table_file_name, 'w') as f:
                 json.dump(inverted_index.get_lookup_table(), f)
         
-        with open('../' + self.config.index_dir + '/' + self.config.collection_stats_file_name, 'w') as f:
+        with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.collection_stats_file_name, 'w') as f:
             json.dump(inverted_index.get_collection_stats(), f)
 
-        with open('../' + self.config.index_dir + '/' + self.config.docs_meta_file_name, 'w') as f:
+        with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.docs_meta_file_name, 'w') as f:
             json.dump(inverted_index.get_docs_meta(), f)
         
-        with open('../' + self.config.index_dir + '/' + self.config.config_file_name, 'w') as f:
+        with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.config_file_name, 'w') as f:
             json.dump(self.config.get_params(), f)
     
     def remove_inverted_index_from_memory(self, inverted_index):

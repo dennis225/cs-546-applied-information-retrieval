@@ -24,6 +24,16 @@ class InvertedList:
             self._postings.append(new_posting)
         self._postings[-1].update_term_positions(position)
     
+    def add_posting_with_positions(self, doc_id, positions):
+        """
+        Adds a new posting to the inverted list with positions
+        int doc_id: ID of the document to be added or modified
+        int[] positions: Positions of the term in the document
+        """
+        new_posting = Posting(doc_id)
+        new_posting.set_term_positions(positions)
+        self._postings.append(new_posting)
+    
     def postings_to_bytearray(self, compressed):
         """
         Converts the inverted list to a bytearray and returns the bytearray
