@@ -71,7 +71,7 @@ def run_experiments(compressed=0, uncompressed=0):
     # run_retrieval_models_tasks(config, index, indexer, root_dir, top_k=10, judge_queries=[3], root_dir)
 
     print('Running inference network tasks')
-    run_inference_network_tasks(config, index, indexer, root_dir, top_k=10)
+    run_inference_network_tasks(config, index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
 
     print('Finished evaluation!')
 
@@ -215,7 +215,7 @@ def run_retrieval_models_tasks(config, inverted_index, indexer, root_dir, top_k=
             generate_final_judgments_file(final_judgments_file_name, query_results, top_k, judge_queries)
 
 
-def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10):
+def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6]):
     queries = None
 
     # Read the retrieval model queries from disk
@@ -237,7 +237,7 @@ def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k
                 if structured_query_operator == 'OrderedWindow':
                     window_size = 1
                 elif structured_query_operator == 'UnorderedWindow':
-                    window_size = 1 * len(query.split())
+                    window_size = 3 * len(query.split())
                 query_result = {
                     'query': query,
                     'topic_number': i + 1,
@@ -248,6 +248,10 @@ def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k
             
             trecrun_file_name = root_dir + '/evaluation/' + structured_query_operator_short_name + trecrun_output_format
             generate_trecrun_file(trecrun_file_name, query_results)
+
+            scenes = get_scenes(indexer.load_data())
+            trecrun_judgments_file_name = root_dir + '/evaluation/' + structured_query_operator_short_name + '_judgments.txt'
+            generate_trecrun_judgments_file(trecrun_judgments_file_name, query_results, scenes, top_k, judge_queries)
 
 
 if __name__ == '__main__':

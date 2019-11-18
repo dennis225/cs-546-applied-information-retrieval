@@ -316,56 +316,91 @@ class UnorderedWindowNode(WindowNode):
         super().__init__(inverted_index, term_nodes, window_size)
     
     def get_window_start_positions(self, term_positions):
-        positions = list()
-
-        if len(term_positions) == 1:
+        window_start_positions = list()
+        
+        num_terms = len(term_positions)
+        if num_terms == 1:
             return term_positions[0]
 
+        # For queries which have duplicate terms, the algorithm below to create unordered windows will
+        # not work properly as when the term positions are sorted and the lowest positions are popped
+        # out, it will pop out all of the duplicate term positions in successive iterations. This results
+        # in the creation of the window only once for a duplicate term which is not desired, specially in
+        # queries like "to be or not to be" where once all the windows for the first occurrence of "to" are
+        # discarded, no more windows can be constructed using the second occurrence as all the positions have
+        # already been popped out. So, a way around this is to distribute the positions among the multiple
+        # term occurrences, so that the other duplicate occurrence can also get some windows around it.
         term_positions.sort(key=lambda x: x[0])
-
-        final_term_positions = []
-
-        # Optimization to fix bug (to be or not to be) and make processing faster
-        # The gist is that repeating words in the queries have duplicate repeating positions and we can discard
-        # half (alternate) of the positions from each duplicate position list to make things faster
-        # This can handle two or even more occurrences of the query word
-        idx = 0
-        while idx < len(term_positions):
-            shortlist = [term_positions[idx]]
-            idx_2 = idx + 1
-            while idx_2 < len(term_positions):
-                if term_positions[idx_2][0] == term_positions[idx][0]:
-                    shortlist.append(term_positions[idx_2])
-                    idx_2 += 1
+        distributed_term_positions = []
+        current_term = 0
+        # Loop through each term's positions list
+        while current_term < num_terms:
+            duplicate_count = 0
+            # Get the positions list for the current term
+            current_term_positions = term_positions[current_term]
+            # Get the next term
+            next_term = current_term + 1
+            # Loop while there are duplicates
+            while next_term < num_terms:
+                # Get the next term's positions list
+                next_term_positions = term_positions[next_term]
+                # If the first positions match, if yes, then the list will match
+                if next_term_positions[0] == current_term_positions[0]:
+                    # Update duplicate counter
+                    duplicate_count += 1
+                    # Update next term
+                    next_term += 1
+                # Otherwise, there are no duplicates for this term
                 else:
                     break
-            if len(shortlist) == 1:
-                final_term_positions.append(shortlist[0])
+            # If there are duplicates, divide the positions among the terms equally so each of them can
+            # at least one window while creating unordered windows
+            if duplicate_count:
+                for i in range(duplicate_count + 1):
+                    start_position = i % (duplicate_count + 1)
+                    step = duplicate_count + 1
+                    distributed_term_positions.append(current_term_positions[start_position::step])
+            # Otherwise, no distribution of positions is required
             else:
-                for i in range(len(shortlist)):
-                    final_term_positions.append(shortlist[0][i % 2::2])
-            idx = idx_2
-        term_positions = final_term_positions
+                distributed_term_positions.append(current_term_positions)
+            current_term = next_term
+        term_positions = distributed_term_positions
 
-        while all(len(l) > 0 for l in term_positions):
+        # It is going to be difficult to check the windows for terms if the windows can be constructed
+        # on either side of a term position. To avoid this, sort all term positions to get the smallest
+        # term position at every iteration through the term positions, so that we always construct the
+        # window to the right of the current smallest term position. This position could correspond to a
+        # term which is not the first term in the query string. This is allowed in an unordered window.
+
+        # As long as there are positions left in any term's positions list, keep checking
+        while all(len(term_pos_list) > 0 for term_pos_list in term_positions):
+            # Sort the term positions lists in place as described above
             term_positions.sort(key=lambda x: x[0])
-            left = term_positions[0].pop(0)
-            prev = left
-            for l in term_positions[1:]:
-                if prev < l[0] < left + self.window_size:
-                    prev = l[0]
+            # Create a window with the start position as the lowest position in the term positions list
+            window_start_position = term_positions[0].pop(0)
+            # Set the previous term position as the start of the window
+            prev_term_position = window_start_position
+            # Go through the other term's positions lists and check if they lie inside the window
+            for term_pos_list in term_positions[1:]:
+                # If the term's position lies inside the window of the previous term
+                if prev_term_position < term_pos_list[0] and term_pos_list[0] < window_start_position + self.window_size:
+                    # Set the previous term position as the position of this term and keep going
+                    prev_term_position = term_pos_list[0]
+                # Otherwise break the loop and get the next window
                 else:
-                    if l[0] == prev:
-                        l.pop(0)
                     break
+            # If the above for loop was not broken, it means that all the terms were found inside the window
+            # So, add this window to the window_start_positions list
             else:
-                positions.append(left)
+                window_start_positions.append(window_start_position)
 
-        return positions
+        return window_start_positions
 
 
 class BooleanAndNode(UnorderedWindowNode):
     def __init__(self, inverted_index, term_nodes):
+        # Instead of getting lengths of each document for the window size
+        # we can just set the window size to a very large number
         super().__init__(inverted_index, term_nodes, window_size=sys.maxsize)
 
 
