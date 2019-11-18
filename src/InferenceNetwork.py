@@ -22,38 +22,36 @@ class InferenceNetwork:
             self.network_operator = UnorderedWindowNode(self.inverted_index, term_nodes, window_size)
         elif structured_query_operator == 'BooleanAnd':
             self.network_operator = BooleanAndNode(self.inverted_index, term_nodes)
-        elif structured_query_operator == 'Sum':
-            self.network_operator = SumNode(self.inverted_index, term_nodes)
-        elif structured_query_operator == 'And':
-            self.network_operator = AndNode(self.inverted_index, term_nodes)
-        elif structured_query_operator == 'Or':
-            self.network_operator = OrNode(self.inverted_index, term_nodes)
-        elif structured_query_operator == 'Max':
-            self.network_operator = MaxNode(self.inverted_index, term_nodes)
+        # elif structured_query_operator == 'Sum':
+        #     self.network_operator = SumNode(self.inverted_index, term_nodes)
+        # elif structured_query_operator == 'And':
+        #     self.network_operator = AndNode(self.inverted_index, term_nodes)
+        # elif structured_query_operator == 'Or':
+        #     self.network_operator = OrNode(self.inverted_index, term_nodes)
+        # elif structured_query_operator == 'Max':
+        #     self.network_operator = MaxNode(self.inverted_index, term_nodes)
         
         return self.network_operator
     
-    # def get_documents(self, count=10):
-    #     scores = defaultdict(int)
-    #     results = []
+    def get_documents(self, count=10):
+        scores = defaultdict(int)
+        results = []
 
-    #     print(self.query_string)
-
-    #     while self.network_operator.has_more():
-    #         doc = self.network_operator.next_candidate()
-    #         doc_id = doc.get_doc_id()
-    #         self.network_operator.skip_to(doc_id)
-    #         score = self.network_operator.score(doc)
-    #         if score:
-    #             scores[doc_id] = score
+        while self.network_operator.has_more():
+            doc = self.network_operator.next_candidate()
+            doc_id = doc.get_doc_id()
+            score = self.network_operator.score(doc)
+            if score:
+                scores[doc_id] = score
+            self.network_operator.move_forward()
         
-    #     scores_list = scores.items()
-    #     sorted_scores_list = sorted(scores_list, key=lambda x: (x[1], x[0]), reverse=True)
+        scores_list = scores.items()
+        sorted_scores_list = sorted(scores_list, key=lambda x: (x[1], x[0]), reverse=True)
 
-    #     # Return the meta info of the top count number of documents
-    #     for score in sorted_scores_list[:count]:
-    #         doc_id = score[0]
-    #         doc_meta = deepcopy(self.inverted_index.get_doc_meta(doc_id))
-    #         doc_meta['score'] = score[1]
-    #         results.append(doc_meta)
-    #     return results
+        # Return the meta info of the top count number of documents
+        for score in sorted_scores_list[:count]:
+            doc_id = score[0]
+            doc_meta = deepcopy(self.inverted_index.get_doc_meta(doc_id))
+            doc_meta['score'] = score[1]
+            results.append(doc_meta)
+        return results

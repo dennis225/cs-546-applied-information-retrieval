@@ -6,16 +6,15 @@ from copy import deepcopy
 
 # Import src files
 from InvertedList import InvertedList
+from Posting import Posting
 
 
 class QueryNode:
     def __init__(self, inverted_index):
-        super().__init__()
-
         self.ctf = 0
         self.inverted_index = inverted_index
-        self.inverted_list = None
-        self.mu = 2000
+        # self.inverted_list = None
+        self.mu = 1500
     
     def score(self, doc):
         """
@@ -35,27 +34,6 @@ class QueryNode:
         
         score = math.log((fqiD + (self.mu * (cqi / cl))) / (dl + self.mu))
         return score
-
-    def get_documents(self, count=10):
-        scores = defaultdict(int)
-        results = []
-        
-        postings = self.inverted_list.get_postings()
-        for posting in postings:
-            doc_id = posting.get_doc_id()
-            score = self.score(posting)
-            scores[doc_id] = score
-        
-        scores_list = scores.items()
-        sorted_scores_list = sorted(scores_list, key=lambda x: (x[1], x[0]), reverse=True)
-
-        # Return the meta info of the top count number of documents
-        for score in sorted_scores_list[:count]:
-            doc_id = score[0]
-            doc_meta = deepcopy(self.inverted_index.get_doc_meta(doc_id))
-            doc_meta['score'] = score[1]
-            results.append(doc_meta)
-        return results
 
 
 class BeliefNode(QueryNode):
@@ -161,15 +139,18 @@ class ProximityNode(QueryNode):
     def next_candidate(self):
         # When the posting list pointer is moved to a new doc id
         # it is possible that the pointer moves past the end of the postings list
-        # When it does, return a doc id of -1 because there is no corresponding
-        # doc id at that position in the postings list
+        # When it does, return a posting with doc id of -1 because there is no 
+        # corresponding doc id at that position in the postings list
         if self.posting_index < len(self.postings):
-            return self.postings[self.posting_index].get_doc_id()
-        return -1
+            return self.postings[self.posting_index]
+        return Posting(-1)
     
     def skip_to(self, doc_id):
-        while self.posting_index < len(self.postings) and self.next_candidate() < doc_id:
+        while self.posting_index < len(self.postings) and self.next_candidate().get_doc_id() < doc_id:
             self.posting_index += 1
+
+    def move_forward(self):
+        self.posting_index += 1
     
     def get_postings(self):
         return self.inverted_list.get_postings()
@@ -198,7 +179,7 @@ class WindowNode(ProximityNode):
         return all(term_node.has_more() for term_node in self.term_nodes)
     
     def all_terms_on_same_doc(self, doc_id):
-        return all(term_node.next_candidate() == doc_id for term_node in self.term_nodes)
+        return all(term_node.next_candidate().get_doc_id() == doc_id for term_node in self.term_nodes)
     
     def get_window_positions(self):
         # Get a map of {doc_id: [positions]}
@@ -207,7 +188,7 @@ class WindowNode(ProximityNode):
         doc_window_positions = {}
         while self.all_terms_have_more():
             # Get current doc_id for each term
-            doc_id_for_each_term = [term_node.next_candidate() for term_node in self.term_nodes]
+            doc_id_for_each_term = [term_node.next_candidate().get_doc_id() for term_node in self.term_nodes]
             
             # Find the max doc_id as its corresponding term is not present in any lower numbered doc
             # So, the lower numbered docs can be ignored

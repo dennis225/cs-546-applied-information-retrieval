@@ -238,11 +238,12 @@ def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k
                     window_size = 1
                 elif structured_query_operator == 'UnorderedWindow':
                     window_size = 3 * len(query.split())
+                inference_network.get_operator(query, structured_query_operator, window_size)
                 query_result = {
                     'query': query,
                     'topic_number': i + 1,
                     'run_tag': oit_identifier + '-' + structured_query_operator_short_name,
-                    'docs': inference_network.get_operator(query, structured_query_operator, window_size).get_documents(inverted_index.get_total_docs())
+                    'docs': inference_network.get_documents(inverted_index.get_total_docs())
                 }
                 query_results.append(query_result)
             
