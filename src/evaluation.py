@@ -70,8 +70,11 @@ def run_experiments(compressed=0, uncompressed=0):
     # print('Running retrieval model tasks')
     # run_retrieval_models_tasks(config, index, indexer, root_dir, top_k=10, judge_queries=[3], root_dir)
 
-    print('Running inference network tasks')
-    run_inference_network_tasks(config, index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
+    # print('Running inference network tasks')
+    # run_inference_network_tasks(config, index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
+
+    print('Running clustering tasks')
+    run_clustering_tasks(config, index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
 
     print('Finished evaluation!')
 
@@ -253,6 +256,10 @@ def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k
             scenes = get_scenes(indexer.load_data())
             trecrun_judgments_file_name = root_dir + '/evaluation/' + structured_query_operator_short_name + '_judgments.txt'
             generate_trecrun_judgments_file(trecrun_judgments_file_name, query_results, scenes, top_k, judge_queries)
+
+
+def run_clustering_tasks():
+    pass
 
 
 if __name__ == '__main__':

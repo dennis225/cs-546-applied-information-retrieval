@@ -140,6 +140,18 @@ class Indexer:
             inverted_index.load_map(index_map)
         
         return inverted_index
+    
+    def dump_document_vectors_to_disk(self, file_buffer, inverted_index):
+        """
+        Stores the document vectors on disk
+        buffer file_buffer: Buffer for the document vectors file
+        class inverted_index: Instance of the inverted index being used
+        """
+        for term, inverted_list in inverted_index.get_map().items():
+            position_in_file = file_buffer.tell()
+            inverted_list_binary, size_in_bytes = inverted_list.postings_to_bytearray(inverted_index.compressed)
+            file_buffer.write(inverted_list_binary)
+            inverted_index.update_lookup_table(term, position_in_file, size_in_bytes)
 
     def dump_inverted_lists_to_disk(self, file_buffer, inverted_index):
         """
