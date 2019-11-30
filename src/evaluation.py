@@ -45,36 +45,36 @@ def run_experiments(compressed=0, uncompressed=0):
                             inverted_index_compressed)
 
     if inverted_index_uncompressed:
-        index = inverted_index_uncompressed
+        inverted_index = inverted_index_uncompressed
     elif inverted_index_compressed:
-        index = inverted_index_compressed
+        inverted_index = inverted_index_compressed
 
     # print('Generating 7 word queries..........')
-    # run_query_generator(index, 100, 7, root_dir)
+    # run_query_generator(inverted_index, 100, 7, root_dir)
 
     # print('Generating stats for 7 word queries..........')
-    # run_query_stats_generator(index, root_dir)
+    # run_query_stats_generator(inverted_index, root_dir)
 
     # print('Generating 7 two word phrase queries..........')
-    # run_dice_generator(config, index, root_dir)
+    # run_dice_generator(config, inverted_index, root_dir)
 
-    # print('Running timing experiment for uncompressed index..........')
+    # print('Running timing experiment for uncompressed inverted index..........')
     # run_timing_experiment(config, inverted_index_uncompressed, root_dir)
 
-    # print('Running timing experiment for compressed index..........')
+    # print('Running timing experiment for compressed inverted index..........')
     # run_timing_experiment(config, inverted_index_compressed, root_dir)
 
     # print('Generating dataset stats..........')
-    # run_stats_generator(index, root_dir)
+    # run_stats_generator(inverted_index, root_dir)
 
     # print('Running retrieval model tasks')
-    # run_retrieval_models_tasks(config, index, indexer, root_dir, top_k=10, judge_queries=[3], root_dir)
+    # run_retrieval_models_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[3], root_dir)
 
     # print('Running inference network tasks')
-    # run_inference_network_tasks(config, index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
+    # run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
 
     print('Running clustering tasks')
-    run_clustering_tasks(config, index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
+    run_clustering_tasks(inverted_index, indexer)
 
     print('Finished evaluation!')
 
@@ -258,8 +258,11 @@ def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k
             generate_trecrun_judgments_file(trecrun_judgments_file_name, query_results, scenes, top_k, judge_queries)
 
 
-def run_clustering_tasks():
-    pass
+def run_clustering_tasks(inverted_index, indexer):
+    indexer.create_document_vectors(inverted_index)
+    document_vectors = indexer.get_document_vectors(inverted_index)
+    print(document_vectors[0].get_doc_id())
+    print(document_vectors[0].get_sparse_vector())
 
 
 if __name__ == '__main__':

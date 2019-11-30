@@ -1,12 +1,17 @@
 # Import built-in libraries
 import os
 import json
+import math
 from collections import defaultdict
+
+# Import third-part libraries
+import numpy as np
 
 # Import src files
 from Config import Config
 from InvertedList import InvertedList
 from InvertedIndex import InvertedIndex
+from DocumentVector import DocumentVector
 
 
 class Indexer:
@@ -141,17 +146,62 @@ class Indexer:
         
         return inverted_index
     
-    def dump_document_vectors_to_disk(self, file_buffer, inverted_index):
-        """
-        Stores the document vectors on disk
-        buffer file_buffer: Buffer for the document vectors file
-        class inverted_index: Instance of the inverted index being used
-        """
-        for term, inverted_list in inverted_index.get_map().items():
-            position_in_file = file_buffer.tell()
-            inverted_list_binary, size_in_bytes = inverted_list.postings_to_bytearray(inverted_index.compressed)
-            file_buffer.write(inverted_list_binary)
-            inverted_index.update_lookup_table(term, position_in_file, size_in_bytes)
+    def create_document_vectors(self, inverted_index):
+        with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.document_vectors_file_name, 'wb') as file_buffer:
+            data = self.load_data()
+            doc_id = -1
+            vocabulary = inverted_index.get_vocabulary()
+            document_vectors = defaultdict(DocumentVector)
+            for scene in data['corpus']:
+                doc_id += 1
+                document_vector = document_vectors[doc_id]
+                document_vector.set_doc_id(doc_id)
+                scene_text = scene['text']
+                terms = list(filter(None, scene_text.split()))
+                # Get the unique terms from the text as we need to calculate score for each term
+                unique_terms = set(terms)
+                for term in unique_terms:
+                    term_id = vocabulary.index(term)
+                    # Refer Chapter - 7, page 242 for the calculation below
+                    fik = terms.count(term)
+                    N = inverted_index.get_total_docs()
+                    nk = inverted_index.get_df(term)
+                    term_value = 0
+                    if fik:
+                        term_value = (math.log(fik) + 1) * math.log(N / nk)
+                    # Add an entry with this term_id, term_value pair to the sparse vector for this doc
+                    document_vector.add_sparse_vector_entry(term_id, term_value)
+                
+                numerator = np.array(list(document_vector.get_sparse_vector().values()))
+                denominator = np.linalg.norm(numerator)
+                normalized_vector = numerator / denominator
+                for term_id, term_value in document_vector.get_sparse_vector().items():
+                    document_vector.add_sparse_vector_entry(term_id, term_value)
+                sparse_vector_binary, size_in_bytes = document_vector.vector_to_bytearray()
+                position_in_file = file_buffer.tell()
+                file_buffer.write(sparse_vector_binary)
+                doc_meta = inverted_index.get_doc_meta(doc_id)
+                doc_meta['document_vector_position'] = position_in_file
+                doc_meta['document_vector_size'] = size_in_bytes
+                inverted_index.update_docs_meta(doc_id, doc_meta)
+        
+        with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.docs_meta_file_name, 'w') as f:
+            json.dump(inverted_index.get_docs_meta(), f)
+    
+    def get_document_vectors(self, inverted_index):
+        number_of_docs = inverted_index.get_total_docs()
+        document_vectors = defaultdict(DocumentVector)
+        with open(self.root_dir + '/' + self.config.index_dir + '/' + self.config.document_vectors_file_name, 'rb') as document_vectors_file:
+            for doc_id in range(number_of_docs):
+                doc_meta = inverted_index.get_doc_meta(doc_id)
+                position_in_file = doc_meta['document_vector_position']
+                size_in_bytes = doc_meta['document_vector_size']
+                document_vectors_file.seek(position_in_file)
+                document_vector = document_vectors[doc_id]
+                document_vector.set_doc_id(doc_id)
+                document_vector_binary = bytearray(document_vectors_file.read(size_in_bytes))
+                document_vector.bytearray_to_vector(document_vector_binary, size_in_bytes)
+        return document_vectors
 
     def dump_inverted_lists_to_disk(self, file_buffer, inverted_index):
         """

@@ -248,9 +248,8 @@ class InvertedIndex:
         self._vocabulary = list(self._lookup_table.keys())
         self._vocabulary.sort()
     
-    # Returns a list of terms in the vocabulary
     def get_vocabulary(self):
         """
-        Returns the vocabulary from the index
+        Returns the vocabulary from the index - a list of terms
         """
         return self._vocabulary

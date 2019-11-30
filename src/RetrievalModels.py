@@ -49,6 +49,25 @@ class RetrievalModels():
         class doc: Instance of Posting to be scored
         """
         return doc.get_dtf() * self.query_terms.count(query_term)
+    
+    def vector_space(self, query_term, doc):
+        """
+        Returns a Vector Space model score for a document given a query term
+        Summation for all query terms is done in the retrieval algorithm
+        str query_term: Query Term to calculate the doc score for
+        class doc: Instance of Posting to be scored
+        """
+        # Frequency of term in the document (document term frequency - dtf)
+        fik = doc.get_dtf()
+        # Number of documents in the collection
+        N = self.inverted_index.get_total_docs()
+        # Number of documents containing the term (document frequency - df)
+        nk = self.inverted_index.get_df(query_term)
+        
+        score = 0
+        if fik:
+            score = (math.log(fik) + 1) * math.log(N / nk)
+        return score
 
     def bm25(self, query_term, doc):
         """

@@ -20,7 +20,8 @@ class Config:
         inverted_lists_file_name='inverted_lists',
         lookup_table_file_name='lookup_table',
         docs_meta_file_name='docs_meta',
-        collection_stats_file_name='collection_stats'
+        collection_stats_file_name='collection_stats',
+        document_vectors_file_name='document_vectors'
     ):
         """
         str data_file_name: Name of the data file to build the index from
@@ -50,6 +51,7 @@ class Config:
         self.lookup_table_file_name = lookup_table_file_name
         self.docs_meta_file_name = docs_meta_file_name
         self.collection_stats_file_name = collection_stats_file_name
+        self.document_vectors_file_name = document_vectors_file_name
 
     def get_params(self):
         """
@@ -68,5 +70,6 @@ class Config:
             'inverted_lists_file_name': self.inverted_lists_file_name,
             'lookup_table_file_name': self.lookup_table_file_name,
             'docs_meta_file_name': self.docs_meta_file_name,
-            'collection_stats_file_name': self.collection_stats_file_name
+            'collection_stats_file_name': self.collection_stats_file_name,
+            'document_vectors_file_name': self.document_vectors_file_name
         }
