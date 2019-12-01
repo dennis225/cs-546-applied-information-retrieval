@@ -168,18 +168,20 @@ class Indexer:
                     nk = inverted_index.get_df(term)
                     term_value = 0
                     if fik:
-                        term_value = (math.log(fik) + 1) * math.log(N / nk)
-                    # Add an entry with this term_id, term_value pair to the sparse vector for this doc
-                    document_vector.add_sparse_vector_entry(term_id, term_value)
+                        # term_value = (math.log(fik) + 1) * math.log(N / nk)
+                        term_value = ((math.log(fik) + 1) * math.log(1 + N / nk)) / len(terms)
+                    # Add an entry with this term_id, term_value pair to the doc vector for this doc
+                    document_vector.add_doc_vector_entry(term_id, term_value)
                 
-                numerator = np.array(list(document_vector.get_sparse_vector().values()))
+                numerator = np.array(list(document_vector.get_doc_vector().values()))
                 denominator = np.linalg.norm(numerator)
                 normalized_vector = numerator / denominator
-                for term_id, term_value in document_vector.get_sparse_vector().items():
-                    document_vector.add_sparse_vector_entry(term_id, term_value)
-                sparse_vector_binary, size_in_bytes = document_vector.vector_to_bytearray()
+                for idx, term_id in enumerate(list(document_vector.get_doc_vector().keys())):
+                    normalized_term_value = float(normalized_vector[idx])
+                    document_vector.add_doc_vector_entry(term_id, normalized_term_value)
+                doc_vector_binary, size_in_bytes = document_vector.vector_to_bytearray()
                 position_in_file = file_buffer.tell()
-                file_buffer.write(sparse_vector_binary)
+                file_buffer.write(doc_vector_binary)
                 doc_meta = inverted_index.get_doc_meta(doc_id)
                 doc_meta['document_vector_position'] = position_in_file
                 doc_meta['document_vector_size'] = size_in_bytes

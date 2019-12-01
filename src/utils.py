@@ -181,3 +181,10 @@ def generate_final_judgments_file(filename, query_results, topK, judge_queries):
                 for i, doc in enumerate(query_result['docs'][:topK]):
                     scene_id = doc['sceneId']
                     f.write(scene_id + '\n')
+
+def generate_clusters_output_file(linkage, threshold, clusters, filename):
+    with open(filename, 'w') as f:
+        for cluster_id, cluster in enumerate(clusters):
+            docs_in_cluster = cluster.get_doc_ids()
+            for doc_id in docs_in_cluster:
+                f.write('{:4} {}\n'.format(cluster_id, doc_id))

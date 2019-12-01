@@ -4,11 +4,15 @@ import argparse
 import time
 import json
 
+# Import third-party libraries
+import numpy as np
+
 # Import src files
 from Indexer import Indexer
 from Query import Query
 from DiceCoefficient import DiceCoefficient
 from InferenceNetwork import InferenceNetwork
+from Clustering import Clustering
 from utils import *
 
 
@@ -74,7 +78,7 @@ def run_experiments(compressed=0, uncompressed=0):
     # run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
 
     print('Running clustering tasks')
-    run_clustering_tasks(inverted_index, indexer)
+    run_clustering_tasks(inverted_index, indexer, root_dir)
 
     print('Finished evaluation!')
 
@@ -258,11 +262,22 @@ def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k
             generate_trecrun_judgments_file(trecrun_judgments_file_name, query_results, scenes, top_k, judge_queries)
 
 
-def run_clustering_tasks(inverted_index, indexer):
-    indexer.create_document_vectors(inverted_index)
+def run_clustering_tasks(inverted_index, indexer, root_dir):
+    # indexer.create_document_vectors(inverted_index)
     document_vectors = indexer.get_document_vectors(inverted_index)
-    print(document_vectors[0].get_doc_id())
-    print(document_vectors[0].get_sparse_vector())
+    num_docs = inverted_index.get_total_docs()
+    # for linkage in ['min', 'max', 'avg', 'mean']:
+    for linkage in ['mean']:
+        # for threshold in np.arange(0.05, 1, 0.05):
+        for threshold in [0.05]:
+            # Round the threshold to 2 decimal places
+            threshold = round(float(threshold), 2)
+            clustering = Clustering(linkage, threshold, document_vectors)
+            for doc_id in range(num_docs):
+                clustering.add_doc_to_cluster(doc_id)
+            clusters = clustering.get_clusters()
+            filename = root_dir + '/evaluation/' + linkage + '_linkage_clusters/' + 'cluster-' + str(threshold) + '.out'
+            generate_clusters_output_file(linkage, threshold, clusters, filename)
 
 
 if __name__ == '__main__':
