@@ -268,8 +268,7 @@ def run_clustering_tasks(inverted_index, indexer, root_dir):
     num_docs = inverted_index.get_total_docs()
     # for linkage in ['min', 'max', 'avg', 'mean']:
     for linkage in ['mean']:
-        # for threshold in np.arange(0.05, 1, 0.05):
-        for threshold in [0.05]:
+        for threshold in np.arange(0.05, 1, 0.05):
             # Round the threshold to 2 decimal places
             threshold = round(float(threshold), 2)
             clustering = Clustering(linkage, threshold, document_vectors)
