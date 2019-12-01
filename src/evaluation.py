@@ -269,8 +269,7 @@ def run_doc_vector_creation_task(inverted_index, indexer):
 def run_clustering_tasks(inverted_index, indexer, root_dir):
     document_vectors = indexer.get_document_vectors(inverted_index)
     num_docs = inverted_index.get_total_docs()
-    # for linkage in ['min', 'max', 'avg', 'mean']:
-    for linkage in ['mean']:
+    for linkage in ['min', 'max', 'avg', 'mean']:
         for value in range(5, 100, 5):
             threshold = value / 100
             cluster_name = str(threshold)
