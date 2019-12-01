@@ -4,9 +4,6 @@ import argparse
 import time
 import json
 
-# Import third-party libraries
-import numpy as np
-
 # Import src files
 from Indexer import Indexer
 from Query import Query
@@ -76,6 +73,9 @@ def run_experiments(compressed=0, uncompressed=0):
 
     # print('Running inference network tasks')
     # run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
+
+    # print('Running doc vector creation task')
+    # run_doc_vector_creation_task(inverted_index, indexer)
 
     print('Running clustering tasks')
     run_clustering_tasks(inverted_index, indexer, root_dir)
@@ -262,20 +262,25 @@ def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k
             generate_trecrun_judgments_file(trecrun_judgments_file_name, query_results, scenes, top_k, judge_queries)
 
 
+def run_doc_vector_creation_task(inverted_index, indexer):
+    indexer.create_document_vectors(inverted_index)
+
+
 def run_clustering_tasks(inverted_index, indexer, root_dir):
-    # indexer.create_document_vectors(inverted_index)
     document_vectors = indexer.get_document_vectors(inverted_index)
     num_docs = inverted_index.get_total_docs()
     # for linkage in ['min', 'max', 'avg', 'mean']:
     for linkage in ['mean']:
-        for threshold in np.arange(0.05, 1, 0.05):
-            # Round the threshold to 2 decimal places
-            threshold = round(float(threshold), 2)
+        for value in range(5, 100, 5):
+            threshold = value / 100
+            cluster_name = str(threshold)
+            if value % 10 == 0:
+                cluster_name += '0'
             clustering = Clustering(linkage, threshold, document_vectors)
             for doc_id in range(num_docs):
                 clustering.add_doc_to_cluster(doc_id)
             clusters = clustering.get_clusters()
-            filename = root_dir + '/evaluation/' + linkage + '_linkage_clusters/' + 'cluster-' + str(threshold) + '.out'
+            filename = root_dir + '/evaluation/' + linkage + '_linkage_clusters/' + 'cluster-' + cluster_name + '.out'
             generate_clusters_output_file(linkage, threshold, clusters, filename)
 
 

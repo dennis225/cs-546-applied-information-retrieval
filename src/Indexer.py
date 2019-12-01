@@ -168,8 +168,7 @@ class Indexer:
                     nk = inverted_index.get_df(term)
                     term_value = 0
                     if fik:
-                        # term_value = (math.log(fik) + 1) * math.log(N / nk)
-                        term_value = ((math.log(fik) + 1) * math.log(1 + N / nk)) / len(terms)
+                        term_value = (math.log(fik) + 1) * math.log((N + 1) / (nk + 0.5))
                     # Add an entry with this term_id, term_value pair to the doc vector for this doc
                     document_vector.add_doc_vector_entry(term_id, term_value)
                 

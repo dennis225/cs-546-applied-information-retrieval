@@ -12,8 +12,7 @@ class Clustering:
         self._threshold = threshold
         self._clusters = []
         self._doc_vectors = doc_vectors
-        print('Using linkage: ', linkage)
-        print('Using threshold: ', threshold)
+        print('Using linkage: ', linkage, ' and threshold: ', threshold)
     
     def add_doc_to_cluster(self, doc_id):
         max_similarity = 0
@@ -21,7 +20,6 @@ class Clustering:
 
         for cluster in self._clusters:
             similarity = cluster.calculate_similarity(doc_id, self._doc_vectors)
-            # print(similarity)
             if similarity > self._threshold:
                 if similarity > max_similarity:
                     best_cluster = cluster
