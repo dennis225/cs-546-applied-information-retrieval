@@ -1,5 +1,3 @@
-import functools
-
 # Import built-in libraries
 from collections import defaultdict
 
@@ -12,7 +10,6 @@ class Clustering:
         self._threshold = threshold
         self._clusters = []
         self._doc_vectors = doc_vectors
-        print('Using linkage: ', linkage, ' and threshold: ', threshold)
     
     def add_doc_to_cluster(self, doc_id):
         max_similarity = 0
@@ -39,6 +36,7 @@ class Cluster:
         self._doc_ids = []
         self._doc_vectors_in_cluster = []
         self._centroid = defaultdict(float)
+        self._term_occurrences = defaultdict(int)
     
     def add_doc_id(self, doc_id, doc_vectors):
         self._doc_ids.append(doc_id)
@@ -46,6 +44,7 @@ class Cluster:
         self._doc_vectors_in_cluster.append(doc_vector)
         for term_id, term_value in doc_vector.items():
             self._centroid[term_id] += term_value
+            self._term_occurrences[term_id] += 1
     
     def get_doc_ids(self):
         return self._doc_ids
@@ -89,7 +88,12 @@ class Cluster:
     
     def mean_linkage_similarity(self, doc_id, doc_vectors):
         new_doc_vector = doc_vectors[doc_id].get_doc_vector()
-        similarity = self.dot_product(new_doc_vector, self.normalize(self._centroid))
+        centroid = defaultdict(float)
+        for term_id, term_value in self._centroid.items():
+            num_occurrences = self._term_occurrences[term_id]
+            centroid[term_id] = term_value / num_occurrences
+        centroid = self.normalize(centroid)
+        similarity = self.dot_product(new_doc_vector, centroid)
         return similarity
     
     def dot_product(self, doc_vector_1, doc_vector_2):
@@ -98,7 +102,6 @@ class Cluster:
             similarity += term_value * doc_vector_2[term_id]
         return similarity
     
-    # @functools.lru_cache(maxsize=1)
     def normalize(self, doc_vector):
         numerator = np.array(list(doc_vector.values()))
         denominator = np.linalg.norm(numerator)

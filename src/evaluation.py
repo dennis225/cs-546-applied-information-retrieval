@@ -276,6 +276,7 @@ def run_clustering_tasks(inverted_index, indexer, root_dir):
             cluster_name = str(threshold)
             if value % 10 == 0:
                 cluster_name += '0'
+            print('Using linkage: ', linkage, ' and threshold: ', cluster_name)
             clustering = Clustering(linkage, threshold, document_vectors)
             for doc_id in range(num_docs):
                 clustering.add_doc_to_cluster(doc_id)
