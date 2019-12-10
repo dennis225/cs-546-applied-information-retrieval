@@ -43,11 +43,6 @@ class QueryNode:
     def get_positions_in_current_posting(self):
         return self.postings[self.posting_index].get_term_positions()
 
-    def has_anything(self):
-        if len(self.postings):
-            return True
-        return False
-
     def has_more(self):
         return self.posting_index < len(self.postings)
 

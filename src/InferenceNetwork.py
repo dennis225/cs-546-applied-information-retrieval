@@ -35,14 +35,13 @@ class InferenceNetwork:
         scores = defaultdict(int)
         results = []
 
-        if self.network_operator.has_anything():
-            while self.network_operator.has_more():
-                doc = self.network_operator.next_candidate()
-                doc_id = doc.get_doc_id()
-                score = self.network_operator.score(doc)
-                if score:
-                    scores[doc_id] = score
-                self.network_operator.skip_to(doc_id + 1)
+        while self.network_operator.has_more():
+            doc = self.network_operator.next_candidate()
+            doc_id = doc.get_doc_id()
+            score = self.network_operator.score(doc)
+            if score:
+                scores[doc_id] = score
+            self.network_operator.skip_to(doc_id + 1)
 
         scores_list = scores.items()
         sorted_scores_list = sorted(
