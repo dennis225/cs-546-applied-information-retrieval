@@ -12,11 +12,11 @@ from Posting import Posting
 class QueryNode:
     def __init__(self, inverted_index):
         self.mu = 1500
+        self.ctf = 0
         self.inverted_index = inverted_index
         self.inverted_list = self.get_inverted_list()
         self.postings = self.get_postings()
         self.posting_index = -1
-        self.ctf = 0
 
     def score(self, doc):
         """
@@ -43,17 +43,16 @@ class QueryNode:
     def get_positions_in_current_posting(self):
         return self.postings[self.posting_index].get_term_positions()
 
+    def has_anything(self):
+        if len(self.postings):
+            return True
+        return False
+
     def has_more(self):
+        self.posting_index += 1
         return self.posting_index < len(self.postings)
 
-    def current_candidate(self):
-        if self.posting_index < len(self.postings):
-            return self.postings[self.posting_index]
-        # If there are no more postings, return None
-        return None
-
     def next_candidate(self):
-        self.posting_index += 1
         if self.posting_index < len(self.postings):
             return self.postings[self.posting_index]
         # If there are no more postings, return a posting with doc id of -1
@@ -62,6 +61,9 @@ class QueryNode:
     def skip_to(self, doc_id):
         while self.posting_index < len(self.postings) and self.next_candidate().get_doc_id() < doc_id:
             self.posting_index += 1
+            if self.posting_index >= len(self.postings) or self.next_candidate().get_doc_id() > doc_id:
+                self.posting_index -= 1
+                break
 
 
 class TermNode(QueryNode):
@@ -85,8 +87,8 @@ class ProximityNode(QueryNode):
 
     def all_terms_on_same_doc(self, doc_id):
         for term_node in self.term_nodes:
-            current_doc_id = term_node.current_candidate().get_doc_id()
-            if not current_doc_id or current_doc_id != doc_id:
+            candidate_doc_id = term_node.next_candidate().get_doc_id()
+            if candidate_doc_id == -1 or candidate_doc_id != doc_id:
                 return False
         return True
 
@@ -120,9 +122,9 @@ class ProximityNode(QueryNode):
                 doc_window_positions[max_doc_id] = window_start_positions
 
             # Move all term nodes to the next doc after max_doc_id if possible
-            next_doc_id = max_doc_id + 1
-            for term_node in self.term_nodes:
-                term_node.skip_to(next_doc_id)
+            # next_doc_id = max_doc_id + 1
+            # for term_node in self.term_nodes:
+            #     term_node.skip_to(next_doc_id)
 
         return doc_window_positions
 
