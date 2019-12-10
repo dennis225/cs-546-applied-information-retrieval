@@ -9,6 +9,22 @@
         {
             "operator": "UnorderedWindow",
             "operatorShortName": "uw"
+        },
+        {
+            "operator": "Sum",
+            "operatorShortName": "sum"
+        },
+        {
+            "operator": "And",
+            "operatorShortName": "and"
+        },
+        {
+            "operator": "Or",
+            "operatorShortName": "or"
+        },
+        {
+            "operator": "Max",
+            "operatorShortName": "max"
         }
     ]
 }

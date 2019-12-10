@@ -14,9 +14,6 @@ class QueryNode:
         self.mu = 1500
         self.ctf = 0
         self.inverted_index = inverted_index
-        self.inverted_list = self.get_inverted_list()
-        self.postings = self.get_postings()
-        self.posting_index = 0
 
     def score(self, doc):
         """
@@ -59,8 +56,11 @@ class QueryNode:
 
 class TermNode(QueryNode):
     def __init__(self, inverted_index, term):
-        self.term = term
         super().__init__(inverted_index)
+        self.term = term
+        self.inverted_list = self.get_inverted_list()
+        self.postings = self.get_postings()
+        self.posting_index = 0
 
     def get_inverted_list(self):
         return self.inverted_index.get_inverted_list(self.term)
@@ -68,9 +68,12 @@ class TermNode(QueryNode):
 
 class ProximityNode(QueryNode):
     def __init__(self, inverted_index, term_nodes, window_size):
+        super().__init__(inverted_index)
         self.term_nodes = term_nodes
         self.window_size = window_size
-        super().__init__(inverted_index)
+        self.inverted_list = self.get_inverted_list()
+        self.postings = self.get_postings()
+        self.posting_index = 0
 
     def all_terms_have_more(self):
         # Check if all terms have more postings left in their respective postings lists
@@ -345,9 +348,9 @@ class FilterReject(FilterNode):
 
 
 class BeliefNode(QueryNode):
-    def __init__(self, term_nodes):
+    def __init__(self, inverted_index, term_nodes):
         self.term_nodes = term_nodes
-        super().__init__()
+        super().__init__(inverted_index)
 
     def has_more(self):
         # If any term node has more documents, they need to be considered
@@ -358,10 +361,11 @@ class BeliefNode(QueryNode):
         candidate = None
         min_doc_id = sys.maxsize
         for term_node in self.term_nodes:
-            doc_id = term_node.next_candidate().get_doc_id()
-            if doc_id < min_doc_id:
-                min_doc_id = doc_id
-                candidate = term_node
+            if term_node.has_more():
+                doc_id = term_node.next_candidate().get_doc_id()
+                if doc_id < min_doc_id:
+                    min_doc_id = doc_id
+                    candidate = term_node.next_candidate()
         return candidate
 
     def skip_to(self, doc_id):
@@ -371,8 +375,8 @@ class BeliefNode(QueryNode):
 
 
 class NotNode(BeliefNode):
-    def __init__(self, term_nodes):
-        super().__init__(term_nodes)
+    def __init__(self, inverted_index, term_nodes):
+        super().__init__(inverted_index, term_nodes)
 
     def score(self, doc_id):
         term_node = self.term_nodes[0]
@@ -382,8 +386,8 @@ class NotNode(BeliefNode):
 
 
 class OrNode(BeliefNode):
-    def __init__(self, term_nodes):
-        super().__init__(term_nodes)
+    def __init__(self, inverted_index, term_nodes):
+        super().__init__(inverted_index, term_nodes)
 
     def score(self, doc_id):
         total_probability = 0
@@ -394,9 +398,9 @@ class OrNode(BeliefNode):
 
 
 class WeightedAndNode(BeliefNode):
-    def __init__(self, term_nodes, weights):
+    def __init__(self, inverted_index, term_nodes, weights):
         self.weights = weights
-        super().__init__(term_nodes)
+        super().__init__(inverted_index, term_nodes)
 
     def score(self, doc_id):
         total_probability = 0
@@ -408,15 +412,15 @@ class WeightedAndNode(BeliefNode):
 
 
 class AndNode(WeightedAndNode):
-    def __init__(self, term_nodes):
+    def __init__(self, inverted_index, term_nodes):
         weights = [1] * len(term_nodes)
-        super().__init__(term_nodes, weights)
+        super().__init__(inverted_index, term_nodes, weights)
 
 
 class WeightedSumNode(BeliefNode):
-    def __init__(self, term_nodes, weights):
+    def __init__(self, inverted_index, term_nodes, weights):
         self.weights = weights
-        super().__init__(term_nodes)
+        super().__init__(inverted_index, term_nodes)
 
     def score(self, doc_id):
         total_probability = 0
@@ -430,14 +434,14 @@ class WeightedSumNode(BeliefNode):
 
 
 class SumNode(WeightedSumNode):
-    def __init__(self, term_nodes):
+    def __init__(self, inverted_index, term_nodes):
         weights = [1] * len(term_nodes)
-        super().__init__(term_nodes, weights)
+        super().__init__(inverted_index, term_nodes, weights)
 
 
 class MaxNode(BeliefNode):
-    def __init__(self, term_nodes):
-        super().__init__(term_nodes)
+    def __init__(self, inverted_index, term_nodes):
+        super().__init__(inverted_index, term_nodes)
 
     def score(self, doc_id):
         probabilities = [term_node.score(doc_id)
