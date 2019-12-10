@@ -16,7 +16,7 @@ class QueryNode:
         self.inverted_index = inverted_index
         self.inverted_list = self.get_inverted_list()
         self.postings = self.get_postings()
-        self.posting_index = -1
+        self.posting_index = 0
 
     def score(self, doc):
         """
@@ -49,7 +49,6 @@ class QueryNode:
         return False
 
     def has_more(self):
-        self.posting_index += 1
         return self.posting_index < len(self.postings)
 
     def next_candidate(self):
@@ -59,11 +58,8 @@ class QueryNode:
         return Posting(-1)
 
     def skip_to(self, doc_id):
-        while self.posting_index < len(self.postings) and self.next_candidate().get_doc_id() < doc_id:
+        while self.posting_index < len(self.postings) and self.postings[self.posting_index].get_doc_id() < doc_id:
             self.posting_index += 1
-            if self.posting_index >= len(self.postings) or self.next_candidate().get_doc_id() > doc_id:
-                self.posting_index -= 1
-                break
 
 
 class TermNode(QueryNode):
@@ -122,9 +118,9 @@ class ProximityNode(QueryNode):
                 doc_window_positions[max_doc_id] = window_start_positions
 
             # Move all term nodes to the next doc after max_doc_id if possible
-            # next_doc_id = max_doc_id + 1
-            # for term_node in self.term_nodes:
-            #     term_node.skip_to(next_doc_id)
+            next_doc_id = max_doc_id + 1
+            for term_node in self.term_nodes:
+                term_node.skip_to(next_doc_id)
 
         return doc_window_positions
 
@@ -359,12 +355,22 @@ class BeliefNode(QueryNode):
         super().__init__()
 
     def has_more(self):
+        # If any term node has more documents, they need to be considered
         return any(term_node.has_more() for term_node in self.term_nodes)
 
     def next_candidate(self):
-        return min(term_node.next_candidate() for term_node in self.term_nodes)
+        # Consider the minimum next doc_id from all term nodes
+        candidate = None
+        min_doc_id = sys.maxsize
+        for term_node in self.term_nodes:
+            doc_id = term_node.next_candidate().get_doc_id()
+            if doc_id < min_doc_id:
+                min_doc_id = doc_id
+                candidate = term_node
+        return candidate
 
     def skip_to(self, doc_id):
+        # Move all term nodes to the given doc_id
         for term_node in self.term_nodes:
             term_node.skip_to(doc_id)
 
