@@ -71,14 +71,14 @@ def run_experiments(compressed=0, uncompressed=0):
     # print('Running retrieval model tasks')
     # run_retrieval_models_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[3], root_dir)
 
-    # print('Running inference network tasks')
-    # run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
+    print('Running inference network tasks')
+    run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
 
     # print('Running doc vector creation task')
     # run_doc_vector_creation_task(inverted_index, indexer)
 
-    print('Running clustering tasks')
-    run_clustering_tasks(inverted_index, indexer, root_dir)
+    # print('Running clustering tasks')
+    # run_clustering_tasks(inverted_index, indexer, root_dir)
 
     print('Finished evaluation!')
 
@@ -193,7 +193,8 @@ def run_retrieval_models_tasks(config, inverted_index, indexer, root_dir, top_k=
             retrieval_model = task['retrievalModelName']
             retrieval_model_method = task['retrievalModelMethod']
             retrieval_model_args = task['params']
-            params = '-'.join(str(arg) for arg in list(retrieval_model_args.values()))
+            params = '-'.join(str(arg)
+                              for arg in list(retrieval_model_args.values()))
             if params:
                 params = '-' + params
             query_index = Query(config,
@@ -211,15 +212,19 @@ def run_retrieval_models_tasks(config, inverted_index, indexer, root_dir, top_k=
                     'docs': query_index.get_documents(query)
                 }
                 query_results.append(query_result)
-            
-            trecrun_file_name = root_dir + '/evaluation/' + retrieval_model_method + trecrun_output_format
+
+            trecrun_file_name = root_dir + '/evaluation/' + \
+                retrieval_model_method + trecrun_output_format
             generate_trecrun_file(trecrun_file_name, query_results)
 
             scenes = get_scenes(indexer.load_data())
-            trecrun_judgments_file_name = root_dir + '/evaluation/' + retrieval_model_method + '_judgments.txt'
-            generate_trecrun_judgments_file(trecrun_judgments_file_name, query_results, scenes, top_k, judge_queries)
+            trecrun_judgments_file_name = root_dir + '/evaluation/' + \
+                retrieval_model_method + '_judgments.txt'
+            generate_trecrun_judgments_file(
+                trecrun_judgments_file_name, query_results, scenes, top_k, judge_queries)
 
-            generate_final_judgments_file(final_judgments_file_name, query_results, top_k, judge_queries)
+            generate_final_judgments_file(
+                final_judgments_file_name, query_results, top_k, judge_queries)
 
 
 def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6]):
@@ -228,7 +233,7 @@ def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k
     # Read the retrieval model queries from disk
     with open(root_dir + '/evaluation/queries_retrieval_model.txt', 'r') as f:
         queries = f.read().split('\n')
-    
+
     with open(root_dir + '/evaluation/trecrun_configs_inference_network.json', 'r') as f:
         trecrun_configs = json.load(f)
         oit_identifier = trecrun_configs['oitIdentifier']
@@ -237,7 +242,6 @@ def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k
         for task in tasks:
             structured_query_operator = task['operator']
             structured_query_operator_short_name = task['operatorShortName']
-            inference_network = InferenceNetwork(inverted_index)
             query_results = []
             window_size = 1
             for i, query in enumerate(queries):
@@ -245,15 +249,18 @@ def run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k
                     window_size = 1
                 elif structured_query_operator == 'UnorderedWindow':
                     window_size = 3 * len(query.split())
-                inference_network.get_operator(query, structured_query_operator, window_size)
+
+                inference_network = InferenceNetwork(inverted_index, query, structured_query_operator, window_size)
+
                 query_result = {
                     'query': query,
                     'topic_number': i + 1,
                     'run_tag': oit_identifier + '-' + structured_query_operator_short_name,
                     'docs': inference_network.get_documents(inverted_index.get_total_docs())
                 }
+
                 query_results.append(query_result)
-            
+
             trecrun_file_name = root_dir + '/evaluation/' + structured_query_operator_short_name + trecrun_output_format
             generate_trecrun_file(trecrun_file_name, query_results)
 
@@ -280,8 +287,10 @@ def run_clustering_tasks(inverted_index, indexer, root_dir):
             for doc_id in range(num_docs):
                 clustering.add_doc_to_cluster(doc_id)
             clusters = clustering.get_clusters()
-            filename = root_dir + '/evaluation/' + linkage + '_linkage_clusters/' + 'cluster-' + cluster_name + '.out'
-            generate_clusters_output_file(linkage, threshold, clusters, filename)
+            filename = root_dir + '/evaluation/' + linkage + \
+                '_linkage_clusters/' + 'cluster-' + cluster_name + '.out'
+            generate_clusters_output_file(
+                linkage, threshold, clusters, filename)
 
 
 if __name__ == '__main__':

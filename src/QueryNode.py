@@ -11,11 +11,13 @@ from Posting import Posting
 
 class QueryNode:
     def __init__(self, inverted_index):
-        self.ctf = 0
-        self.inverted_index = inverted_index
-        # self.inverted_list = None
         self.mu = 1500
-    
+        self.inverted_index = inverted_index
+        self.inverted_list = self.get_inverted_list()
+        self.postings = self.get_postings()
+        self.posting_index = -1
+        self.ctf = 0
+
     def score(self, doc):
         """
         Returns a Dirichlet smoothed query likelihood score for a document given a query term
@@ -31,165 +33,72 @@ class QueryNode:
         cqi = self.ctf
         # Total length of all documents in the collection
         cl = self.inverted_index.get_collection_length()
-        
+
         score = math.log((fqiD + (self.mu * (cqi / cl))) / (dl + self.mu))
         return score
 
+    def get_postings(self):
+        return self.inverted_list.get_postings()
 
-class BeliefNode(QueryNode):
-    def __init__(self, child_nodes):
-        self.child_nodes = child_nodes
-        super().__init__()
-    
-    def has_more(self):
-        return any(child_node.has_more() for child_node in self.child_nodes)
-    
-    def next_candidate(self):
-        return min(child_node.next_candidate() for child_node in self.child_nodes)
-    
-    def skip_to(self, doc_id):
-        for child_node in self.child_nodes:
-            child_node.skip_to(doc_id)
+    def get_positions_in_current_posting(self):
+        return self.postings[self.posting_index].get_term_positions()
 
-
-class NotNode(BeliefNode):
-    def __init__(self, child_nodes):
-        super().__init__(child_nodes)
-    
-    def score(self, doc_id):
-        child_node = self.child_nodes[0]
-        probability = math.exp(child_node.score(doc_id))
-        score = math.log(1 - probability)
-        return score
-
-
-class OrNode(BeliefNode):
-    def __init__(self, child_nodes):
-        super().__init__(child_nodes)
-    
-    def score(self, doc_id):
-        total_probability = 0
-        for child_node in self.child_nodes:
-            probability = math.log(1 - math.exp(child_node.score(doc_id)))
-            total_probability += probability
-        return math.log(1 - math.exp(total_probability))
-
-
-class WeightedAndNode(BeliefNode):
-    def __init__(self, child_nodes, weights):
-        self.weights = weights
-        super().__init__(child_nodes)
-    
-    def score(self, doc_id):
-        total_probability = 0
-        for i, child_node in enumerate(self.child_nodes):
-            weight = self.weights[i]
-            probability = weight * child_node.score(doc_id)
-            total_probability += probability
-        return total_probability
-
-
-class AndNode(WeightedAndNode):
-    def __init__(self, child_nodes):
-        weights = [1] * len(child_nodes)
-        super().__init__(child_nodes, weights)
-
-
-class WeightedSumNode(BeliefNode):
-    def __init__(self, child_nodes, weights):
-        self.weights = weights
-        super().__init__(child_nodes)
-    
-    def score(self, doc_id):
-        total_probability = 0
-        total_weight = 0
-        for i, child_node in enumerate(self.child_nodes):
-            weight = self.weights[i]
-            probability = weight * math.exp(child_node.score(doc_id))
-            total_probability += probability
-            total_weight += weight
-        return math.log(total_probability / total_weight)
-
-
-class SumNode(WeightedSumNode):
-    def __init__(self, child_nodes):
-        weights = [1] * len(child_nodes)
-        super().__init__(child_nodes, weights)
-
-
-class MaxNode(BeliefNode):
-    def __init__(self, child_nodes):
-        super().__init__(child_nodes)
-    
-    def score(self, doc_id):
-        probabilities = [child_node.score(doc_id) for child_node in self.child_nodes]
-        return max(probabilities)
-    
-
-class ProximityNode(QueryNode):
-    def __init__(self, inverted_index):
-        super().__init__(inverted_index)
-        self.inverted_list = self.get_inverted_list()
-        self.postings = self.get_postings()
-        self.posting_index = 0
-    
     def has_more(self):
         return self.posting_index < len(self.postings)
-    
-    def next_candidate(self):
-        # When the posting list pointer is moved to a new doc id
-        # it is possible that the pointer moves past the end of the postings list
-        # When it does, return a posting with doc id of -1 because there is no 
-        # corresponding doc id at that position in the postings list
+
+    def current_candidate(self):
         if self.posting_index < len(self.postings):
             return self.postings[self.posting_index]
+        # If there are no more postings, return None
+        return None
+
+    def next_candidate(self):
+        self.posting_index += 1
+        if self.posting_index < len(self.postings):
+            return self.postings[self.posting_index]
+        # If there are no more postings, return a posting with doc id of -1
         return Posting(-1)
-    
+
     def skip_to(self, doc_id):
         while self.posting_index < len(self.postings) and self.next_candidate().get_doc_id() < doc_id:
             self.posting_index += 1
 
-    def move_forward(self):
-        self.posting_index += 1
-    
-    def get_postings(self):
-        return self.inverted_list.get_postings()
-    
-    def get_positions(self):
-        return self.postings[self.posting_index].get_term_positions()
 
-
-class TermNode(ProximityNode):
+class TermNode(QueryNode):
     def __init__(self, inverted_index, term):
         self.term = term
         super().__init__(inverted_index)
-    
+
     def get_inverted_list(self):
         return self.inverted_index.get_inverted_list(self.term)
 
 
-class WindowNode(ProximityNode):
+class ProximityNode(QueryNode):
     def __init__(self, inverted_index, term_nodes, window_size):
         self.term_nodes = term_nodes
         self.window_size = window_size
         super().__init__(inverted_index)
-    
+
     def all_terms_have_more(self):
         # Check if all terms have more postings left in their respective postings lists
         return all(term_node.has_more() for term_node in self.term_nodes)
-    
+
     def all_terms_on_same_doc(self, doc_id):
-        return all(term_node.next_candidate().get_doc_id() == doc_id for term_node in self.term_nodes)
-    
+        for term_node in self.term_nodes:
+            current_doc_id = term_node.current_candidate().get_doc_id()
+            if not current_doc_id or current_doc_id != doc_id:
+                return False
+        return True
+
     def get_window_positions(self):
         # Get a map of {doc_id: [positions]}
-        # doc_id: Doc in which all the query terms are present in the given window size
+        # doc_id: Doc in which all the term nodes are present within the given window size
         # positions: Starting positions of the windows in the doc with given doc_id
         doc_window_positions = {}
         while self.all_terms_have_more():
-            # Get current doc_id for each term
+            # Get the next doc_id for each term node
             doc_id_for_each_term = [term_node.next_candidate().get_doc_id() for term_node in self.term_nodes]
-            
+
             # Find the max doc_id as its corresponding term is not present in any lower numbered doc
             # So, the lower numbered docs can be ignored
             max_doc_id = max(doc_id_for_each_term)
@@ -198,23 +107,23 @@ class WindowNode(ProximityNode):
             for term_node in self.term_nodes:
                 term_node.skip_to(max_doc_id)
             all_term_nodes_on_same_doc = self.all_terms_on_same_doc(max_doc_id)
-            
+
             # Check if all terms are on the same doc
             if all_term_nodes_on_same_doc:
-                # Get all term positions in the doc
-                term_positions = [term_node.get_positions() for term_node in self.term_nodes]
-                
+                # Get all positions in the doc for each term (list of lists to maintain order in ordered window)
+                term_positions = [term_node.get_positions_in_current_posting() for term_node in self.term_nodes]
+
                 # Find the window start positions (there could be multiple windows with all query terms)
                 window_start_positions = self.get_window_start_positions(term_positions)
 
                 # Add the window start positions to the doc_window_positions for the query
                 doc_window_positions[max_doc_id] = window_start_positions
-            
+
             # Move all term nodes to the next doc after max_doc_id if possible
             next_doc_id = max_doc_id + 1
             for term_node in self.term_nodes:
                 term_node.skip_to(next_doc_id)
-        
+
         return doc_window_positions
 
     def get_inverted_list(self):
@@ -227,17 +136,17 @@ class WindowNode(ProximityNode):
         return inverted_list
 
 
-class OrderedWindowNode(WindowNode):
+class OrderedWindowNode(ProximityNode):
     def __init__(self, inverted_index, term_nodes, window_size):
         super().__init__(inverted_index, term_nodes, window_size)
-    
+
     def get_window_start_positions(self, term_positions):
         window_start_positions = list()
 
         num_terms = len(term_positions)
         if num_terms == 1:
             return term_positions[0]
-        
+
         term_positions_pointers = [0] * num_terms
         current_term = 0
 
@@ -275,7 +184,8 @@ class OrderedWindowNode(WindowNode):
                         # If yes, we have found a window with all words in it
                         if current_term == num_terms - 1:
                             # Add this window to the window_start_positions list
-                            window_start_positions.append(window_start_position)
+                            window_start_positions.append(
+                                window_start_position)
                             # Reset the current term to the first term
                             current_term = 0
                             break
@@ -292,13 +202,13 @@ class OrderedWindowNode(WindowNode):
         return window_start_positions
 
 
-class UnorderedWindowNode(WindowNode):
+class UnorderedWindowNode(ProximityNode):
     def __init__(self, inverted_index, term_nodes, window_size):
         super().__init__(inverted_index, term_nodes, window_size)
-    
+
     def get_window_start_positions(self, term_positions):
         window_start_positions = list()
-        
+
         num_terms = len(term_positions)
         if num_terms == 1:
             return term_positions[0]
@@ -340,7 +250,8 @@ class UnorderedWindowNode(WindowNode):
                 for i in range(duplicate_count + 1):
                     start_position = i % (duplicate_count + 1)
                     step = duplicate_count + 1
-                    distributed_term_positions.append(current_term_positions[start_position::step])
+                    distributed_term_positions.append(
+                        current_term_positions[start_position::step])
             # Otherwise, no distribution of positions is required
             else:
                 distributed_term_positions.append(current_term_positions)
@@ -390,7 +301,7 @@ class FilterNode(QueryNode):
         self.query_node = query_node
         self.proximity_node = proximity_node
         super().__init__(inverted_index)
-    
+
     def skip_to(self, doc_id):
         self.query_node.skip_to(doc_id)
         self.proximity_node.skip_to(doc_id)
@@ -399,13 +310,13 @@ class FilterNode(QueryNode):
 class FilterRequire(FilterNode):
     def __init__(self, inverted_index, query_node, proximity_node):
         super().__init__(inverted_index, query_node, proximity_node)
-    
+
     def has_more(self):
         return self.query_node.has_more() and self.proximity_node.has_more()
-    
+
     def next_candidate(self):
         return max(self.query_node.next_candidate(), self.proximity_node.next_candidate())
-    
+
     def score(self, doc_id):
         # Move the proximity node to the given doc_id
         self.proximity_node.skip_to(doc_id)
@@ -421,13 +332,13 @@ class FilterRequire(FilterNode):
 class FilterReject(FilterNode):
     def __init__(self, inverted_index, query_node, proximity_node):
         super().__init__(inverted_index, query_node, proximity_node)
-    
+
     def has_more(self):
         return self.query_node.has_more()
-    
+
     def next_candidate(self):
         return self.query_node.next_candidate()
-    
+
     def score(self, doc_id):
         # Move the proximity node to the given doc_id
         self.proximity_node.skip_to(doc_id)
@@ -438,3 +349,94 @@ class FilterReject(FilterNode):
             return 0
         # Otherwise score the document
         return self.query_node.score(doc_id)
+
+
+class BeliefNode(QueryNode):
+    def __init__(self, term_nodes):
+        self.term_nodes = term_nodes
+        super().__init__()
+
+    def has_more(self):
+        return any(term_node.has_more() for term_node in self.term_nodes)
+
+    def next_candidate(self):
+        return min(term_node.next_candidate() for term_node in self.term_nodes)
+
+    def skip_to(self, doc_id):
+        for term_node in self.term_nodes:
+            term_node.skip_to(doc_id)
+
+
+class NotNode(BeliefNode):
+    def __init__(self, term_nodes):
+        super().__init__(term_nodes)
+
+    def score(self, doc_id):
+        term_node = self.term_nodes[0]
+        probability = math.exp(term_node.score(doc_id))
+        score = math.log(1 - probability)
+        return score
+
+
+class OrNode(BeliefNode):
+    def __init__(self, term_nodes):
+        super().__init__(term_nodes)
+
+    def score(self, doc_id):
+        total_probability = 0
+        for term_node in self.term_nodes:
+            probability = math.log(1 - math.exp(term_node.score(doc_id)))
+            total_probability += probability
+        return math.log(1 - math.exp(total_probability))
+
+
+class WeightedAndNode(BeliefNode):
+    def __init__(self, term_nodes, weights):
+        self.weights = weights
+        super().__init__(term_nodes)
+
+    def score(self, doc_id):
+        total_probability = 0
+        for i, term_node in enumerate(self.term_nodes):
+            weight = self.weights[i]
+            probability = weight * term_node.score(doc_id)
+            total_probability += probability
+        return total_probability
+
+
+class AndNode(WeightedAndNode):
+    def __init__(self, term_nodes):
+        weights = [1] * len(term_nodes)
+        super().__init__(term_nodes, weights)
+
+
+class WeightedSumNode(BeliefNode):
+    def __init__(self, term_nodes, weights):
+        self.weights = weights
+        super().__init__(term_nodes)
+
+    def score(self, doc_id):
+        total_probability = 0
+        total_weight = 0
+        for i, term_node in enumerate(self.term_nodes):
+            weight = self.weights[i]
+            probability = weight * math.exp(term_node.score(doc_id))
+            total_probability += probability
+            total_weight += weight
+        return math.log(total_probability / total_weight)
+
+
+class SumNode(WeightedSumNode):
+    def __init__(self, term_nodes):
+        weights = [1] * len(term_nodes)
+        super().__init__(term_nodes, weights)
+
+
+class MaxNode(BeliefNode):
+    def __init__(self, term_nodes):
+        super().__init__(term_nodes)
+
+    def score(self, doc_id):
+        probabilities = [term_node.score(doc_id)
+                         for term_node in self.term_nodes]
+        return max(probabilities)
