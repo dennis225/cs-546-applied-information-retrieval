@@ -238,14 +238,28 @@ class InvertedIndex:
             if self.compressed:
                 dir_name = self.config.compressed_dir
             with open(self.root_dir + '/' + self.config.index_dir + '/' + dir_name + '/' + self.config.inverted_lists_file_name, 'rb') as inverted_lists_file:
-                inverted_list_binary = self.read_inverted_list_from_file(
-                    inverted_lists_file, term_stats['posting_list_position'], term_stats['posting_list_size'])
+                inverted_list_binary = self.read_inverted_list_from_file(inverted_lists_file, term_stats['posting_list_position'], term_stats['posting_list_size'])
                 inverted_list = InvertedList()
-                inverted_list.bytearray_to_postings(
-                    inverted_list_binary, self.compressed, term_stats['df'])
+                inverted_list.bytearray_to_postings(inverted_list_binary, self.compressed, term_stats['df'])
                 return inverted_list
         else:
             return self._map[term]
+
+    def get_prior(self, prior_type, doc_id):
+        """
+        Returns the prior for a doc with the given doc ID
+        str prior_type: Type of the prior to use (currently uniform or random)
+        int doc_id: The doc to get the prior for
+        """
+        with open(self.root_dir + '/' + self.config.index_dir + '/' + prior_type + '_priors', 'rb') as priors_file:
+            format_prior = '<d'
+            size_in_bytes = struct.calcsize(format_prior)
+            position_in_file = doc_id * size_in_bytes
+            priors_file.seek(position_in_file)
+            prior_binary = bytearray(priors_file.read(size_in_bytes))
+            # Convert binary to prior using little-endian byte-order and float format (8 bytes)
+            prior = struct.unpack_from(format_prior, prior_binary, size_in_bytes)[0]
+            return prior
 
     def load_vocabulary(self):
         """

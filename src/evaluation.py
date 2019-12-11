@@ -68,17 +68,20 @@ def run_experiments(compressed=0, uncompressed=0):
     # print('Generating dataset stats..........')
     # run_stats_generator(inverted_index, root_dir)
 
-    # print('Running retrieval model tasks')
+    # print('Running retrieval model tasks..........')
     # run_retrieval_models_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[3], root_dir)
 
-    print('Running inference network tasks')
-    run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
+    # print('Running inference network tasks..........')
+    # run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
 
-    # print('Running doc vector creation task')
+    # print('Running doc vector creation task..........')
     # run_doc_vector_creation_task(inverted_index, indexer)
 
-    # print('Running clustering tasks')
+    # print('Running clustering tasks..........')
     # run_clustering_tasks(inverted_index, indexer, root_dir)
+
+    # print('Running doc prior creation task..........')
+    # run_doc_priors_creation_task(inverted_index, indexer, root_dir)
 
     print('Finished evaluation!')
 
@@ -291,6 +294,17 @@ def run_clustering_tasks(inverted_index, indexer, root_dir):
                 '_linkage_clusters/' + 'cluster-' + cluster_name + '.out'
             generate_clusters_output_file(
                 linkage, threshold, clusters, filename)
+
+
+def run_doc_priors_creation_task(inverted_index, indexer, root_dir):
+    with open(root_dir + '/evaluation/trecrun_configs_query_independent_features.json', 'r') as f:
+        trecrun_configs = json.load(f)
+        oit_identifier = trecrun_configs['oitIdentifier']
+        trecrun_output_format = trecrun_configs['outputFormat']
+        tasks = trecrun_configs['tasks']
+        for task in tasks:
+            prior_type = task['prior']
+            indexer.create_prior(inverted_index, prior_type)
 
 
 if __name__ == '__main__':

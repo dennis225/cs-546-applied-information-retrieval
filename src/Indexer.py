@@ -2,6 +2,8 @@
 import os
 import json
 import math
+import random
+import struct
 from collections import defaultdict
 
 # Import third-part libraries
@@ -23,8 +25,7 @@ class Indexer:
         """
         Namespace config: Arguments passed on the command line
         """
-        self.root_dir = os.path.dirname(
-            os.path.dirname(os.path.abspath(__file__)))
+        self.root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         stored_config = self.get_config(new_config)
         stored_config.update(vars(new_config))
         self.config = Config(**stored_config)
@@ -211,11 +212,28 @@ class Indexer:
                 document_vectors_file.seek(position_in_file)
                 document_vector = document_vectors[doc_id]
                 document_vector.set_doc_id(doc_id)
-                document_vector_binary = bytearray(
-                    document_vectors_file.read(size_in_bytes))
-                document_vector.bytearray_to_vector(
-                    document_vector_binary, size_in_bytes)
+                document_vector_binary = bytearray(document_vectors_file.read(size_in_bytes))
+                document_vector.bytearray_to_vector(document_vector_binary, size_in_bytes)
         return document_vectors
+
+    def create_prior(self, inverted_index, prior_type):
+        with open(self.root_dir + '/' + self.config.index_dir + '/' + prior_type + '_priors', 'wb') as file_buffer:
+            total_docs = inverted_index.get_total_docs()
+            random.seed(0)
+            prior = 0
+            # Initialize an empty bytearray
+            prior_binary = bytearray()
+            size_in_bytes = 0
+            format_prior = '<d'
+            for doc_id in range(total_docs):
+                if prior_type == 'uniform':
+                    prior = math.log(1 / total_docs)
+                else:
+                    prior = math.log(random.random())
+                # Convert prior to binary using little-endian byte-order and float format (8 bytes)
+                prior_binary += struct.pack(format_prior, prior)
+                size_in_bytes += struct.calcsize(format_prior)
+            file_buffer.write(prior_binary)
 
     def dump_inverted_lists_to_disk(self, file_buffer, inverted_index):
         """

@@ -1,0 +1,16 @@
+{
+    "oitIdentifier": "nishankjain",
+    "outputFormat": ".trecrun",
+    "tasks": [
+        {
+            "operator": "And",
+            "operatorShortName": "and",
+            "prior": "uniform"
+        },
+        {
+            "operator": "And",
+            "operatorShortName": "and",
+            "prior": "random"
+        }
+    ]
+}
