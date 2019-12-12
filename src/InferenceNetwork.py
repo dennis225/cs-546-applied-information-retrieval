@@ -2,11 +2,12 @@ from QueryNode import *
 
 
 class InferenceNetwork:
-    def __init__(self, inverted_index, query_string, structured_query_operator, window_size):
+    def __init__(self, inverted_index, query_string, structured_query_operator, window_size=1, prior_type=None):
         self.inverted_index = inverted_index
         self.query_string = query_string
         self.structured_query_operator = structured_query_operator
         self.window_size = window_size
+        self.prior_type = prior_type
         self.network_operator = self.get_operator()
 
     def get_operator(self):
@@ -15,6 +16,10 @@ class InferenceNetwork:
         for term in terms:
             term_node = TermNode(self.inverted_index, term)
             term_nodes.append(term_node)
+
+        if self.prior_type:
+            prior_node = PriorNode(self.inverted_index, self.prior_type)
+            term_nodes.append(prior_node)
 
         if self.structured_query_operator == 'OrderedWindow':
             return OrderedWindowNode(self.inverted_index, term_nodes, self.window_size)

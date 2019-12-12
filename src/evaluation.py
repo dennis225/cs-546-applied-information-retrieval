@@ -83,6 +83,9 @@ def run_experiments(compressed=0, uncompressed=0):
     # print('Running doc prior creation task..........')
     # run_doc_priors_creation_task(inverted_index, indexer, root_dir)
 
+    print('Running inference network tasks..........')
+    run_inference_network_with_prior_tasks(config, inverted_index, indexer, root_dir)
+
     print('Finished evaluation!')
 
 
@@ -303,8 +306,41 @@ def run_doc_priors_creation_task(inverted_index, indexer, root_dir):
         trecrun_output_format = trecrun_configs['outputFormat']
         tasks = trecrun_configs['tasks']
         for task in tasks:
-            prior_type = task['prior']
+            prior_type = task['priorType']
             indexer.create_prior(inverted_index, prior_type)
+
+
+def run_inference_network_with_prior_tasks(config, inverted_index, indexer, root_dir):
+    queries = None
+
+    # Read the retrieval model queries from disk
+    with open(root_dir + '/evaluation/queries_retrieval_model.txt', 'r') as f:
+        queries = f.read().split('\n')
+
+    with open(root_dir + '/evaluation/trecrun_configs_query_independent_features.json', 'r') as f:
+        trecrun_configs = json.load(f)
+        oit_identifier = trecrun_configs['oitIdentifier']
+        trecrun_output_format = trecrun_configs['outputFormat']
+        tasks = trecrun_configs['tasks']
+        for task in tasks:
+            structured_query_operator = task['operator']
+            structured_query_operator_short_name = task['operatorShortName']
+            prior_type = task['priorType']
+            query_results = []
+            for i, query in enumerate(queries[0:1]):
+                inference_network = InferenceNetwork(inverted_index, query, structured_query_operator, prior_type=prior_type)
+
+                query_result = {
+                    'query': query,
+                    'topic_number': i + 1,
+                    'run_tag': oit_identifier + '-' + structured_query_operator_short_name,
+                    'docs': inference_network.get_documents(inverted_index.get_total_docs())
+                }
+
+                query_results.append(query_result)
+
+            trecrun_file_name = root_dir + '/evaluation/' + prior_type + trecrun_output_format
+            generate_trecrun_file(trecrun_file_name, query_results)
 
 
 if __name__ == '__main__':

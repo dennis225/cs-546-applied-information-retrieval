@@ -1,5 +1,6 @@
 # Import built-in libraries
 import os
+import struct
 from collections import defaultdict
 
 # Import src files
@@ -258,7 +259,8 @@ class InvertedIndex:
             priors_file.seek(position_in_file)
             prior_binary = bytearray(priors_file.read(size_in_bytes))
             # Convert binary to prior using little-endian byte-order and float format (8 bytes)
-            prior = struct.unpack_from(format_prior, prior_binary, size_in_bytes)[0]
+            prior = struct.unpack_from(format_prior, prior_binary, 0)[0]
+            print(doc_id, prior)
             return prior
 
     def load_vocabulary(self):

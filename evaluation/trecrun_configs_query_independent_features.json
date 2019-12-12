@@ -5,12 +5,12 @@
         {
             "operator": "And",
             "operatorShortName": "and",
-            "prior": "uniform"
+            "priorType": "uniform"
         },
         {
             "operator": "And",
             "operatorShortName": "and",
-            "prior": "random"
+            "priorType": "random"
         }
     ]
 }

@@ -313,14 +313,15 @@ class FilterRequire(FilterNode):
     def next_candidate(self):
         return max(self.query_node.next_candidate(), self.proximity_node.next_candidate())
 
-    def score(self, doc_id):
+    def score(self, doc):
+        doc_id = doc.get_doc_id()
         # Move the proximity node to the given doc_id
         self.proximity_node.skip_to(doc_id)
 
         # Check if the proximity node was able to move to the given doc_id
         # If yes, score the document
-        if self.proximity_node.next_candidate() == doc_id:
-            return self.query_node.score(doc_id)
+        if self.proximity_node.next_candidate().get_doc_id() == doc_id:
+            return self.query_node.score(doc)
         # Otherwise return a score of 0
         return 0
 
@@ -335,16 +336,17 @@ class FilterReject(FilterNode):
     def next_candidate(self):
         return self.query_node.next_candidate()
 
-    def score(self, doc_id):
+    def score(self, doc):
+        doc_id = doc.get_doc_id()
         # Move the proximity node to the given doc_id
         self.proximity_node.skip_to(doc_id)
 
         # Check if the proximity node was able to move to the given doc_id
         # If yes, return a score of 0
-        if self.proximity_node.next_candidate() == doc_id:
+        if self.proximity_node.next_candidate().get_doc_id() == doc_id:
             return 0
         # Otherwise score the document
-        return self.query_node.score(doc_id)
+        return self.query_node.score(doc)
 
 
 class BeliefNode(QueryNode):
@@ -378,9 +380,9 @@ class NotNode(BeliefNode):
     def __init__(self, inverted_index, term_nodes):
         super().__init__(inverted_index, term_nodes)
 
-    def score(self, doc_id):
+    def score(self, doc):
         term_node = self.term_nodes[0]
-        probability = math.exp(term_node.score(doc_id))
+        probability = math.exp(term_node.score(doc))
         score = math.log(1 - probability)
         return score
 
@@ -389,10 +391,10 @@ class OrNode(BeliefNode):
     def __init__(self, inverted_index, term_nodes):
         super().__init__(inverted_index, term_nodes)
 
-    def score(self, doc_id):
+    def score(self, doc):
         total_probability = 0
         for term_node in self.term_nodes:
-            probability = math.log(1 - math.exp(term_node.score(doc_id)))
+            probability = math.log(1 - math.exp(term_node.score(doc)))
             total_probability += probability
         return math.log(1 - math.exp(total_probability))
 
@@ -402,11 +404,11 @@ class WeightedAndNode(BeliefNode):
         self.weights = weights
         super().__init__(inverted_index, term_nodes)
 
-    def score(self, doc_id):
+    def score(self, doc):
         total_probability = 0
         for i, term_node in enumerate(self.term_nodes):
             weight = self.weights[i]
-            probability = weight * term_node.score(doc_id)
+            probability = weight * term_node.score(doc)
             total_probability += probability
         return total_probability
 
@@ -422,12 +424,12 @@ class WeightedSumNode(BeliefNode):
         self.weights = weights
         super().__init__(inverted_index, term_nodes)
 
-    def score(self, doc_id):
+    def score(self, doc):
         total_probability = 0
         total_weight = 0
         for i, term_node in enumerate(self.term_nodes):
             weight = self.weights[i]
-            probability = weight * math.exp(term_node.score(doc_id))
+            probability = weight * math.exp(term_node.score(doc))
             total_probability += probability
             total_weight += weight
         return math.log(total_probability / total_weight)
@@ -443,7 +445,24 @@ class MaxNode(BeliefNode):
     def __init__(self, inverted_index, term_nodes):
         super().__init__(inverted_index, term_nodes)
 
-    def score(self, doc_id):
-        probabilities = [term_node.score(doc_id)
-                         for term_node in self.term_nodes]
+    def score(self, doc):
+        probabilities = [term_node.score(doc) for term_node in self.term_nodes]
         return max(probabilities)
+
+
+class PriorNode(QueryNode):
+    def __init__(self, inverted_index, prior_type):
+        self.prior_type = prior_type
+        super().__init__(inverted_index)
+
+    def has_more(self):
+        return False
+
+    def next_candidate(self):
+        return None
+
+    def skip_to(self, doc_id):
+        pass
+
+    def score(self, doc):
+        return self.inverted_index.get_prior(self.prior_type, doc.get_doc_id())
