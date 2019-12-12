@@ -50,38 +50,38 @@ def run_experiments(compressed=0, uncompressed=0):
     elif inverted_index_compressed:
         inverted_index = inverted_index_compressed
 
-    # print('Generating 7 word queries..........')
-    # run_query_generator(inverted_index, 100, 7, root_dir)
+    print('Generating 7 word queries..........')
+    run_query_generator(inverted_index, 100, 7, root_dir)
 
-    # print('Generating stats for 7 word queries..........')
-    # run_query_stats_generator(inverted_index, root_dir)
+    print('Generating stats for 7 word queries..........')
+    run_query_stats_generator(inverted_index, root_dir)
 
-    # print('Generating 7 two word phrase queries..........')
-    # run_dice_generator(config, inverted_index, root_dir)
+    print('Generating 7 two word phrase queries..........')
+    run_dice_generator(config, inverted_index, root_dir)
 
-    # print('Running timing experiment for uncompressed inverted index..........')
-    # run_timing_experiment(config, inverted_index_uncompressed, root_dir)
+    print('Running timing experiment for uncompressed inverted index..........')
+    run_timing_experiment(config, inverted_index_uncompressed, root_dir)
 
-    # print('Running timing experiment for compressed inverted index..........')
-    # run_timing_experiment(config, inverted_index_compressed, root_dir)
+    print('Running timing experiment for compressed inverted index..........')
+    run_timing_experiment(config, inverted_index_compressed, root_dir)
 
-    # print('Generating dataset stats..........')
-    # run_stats_generator(inverted_index, root_dir)
+    print('Generating dataset stats..........')
+    run_stats_generator(inverted_index, root_dir)
 
-    # print('Running retrieval model tasks..........')
-    # run_retrieval_models_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[3], root_dir)
+    print('Running retrieval model tasks..........')
+    run_retrieval_models_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[3], root_dir)
 
-    # print('Running inference network tasks..........')
-    # run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
+    print('Running inference network tasks..........')
+    run_inference_network_tasks(config, inverted_index, indexer, root_dir, top_k=10, judge_queries=[6, 7, 8, 9, 10])
 
-    # print('Running doc vector creation task..........')
-    # run_doc_vector_creation_task(inverted_index, indexer)
+    print('Running doc vector creation task..........')
+    run_doc_vector_creation_task(inverted_index, indexer)
 
-    # print('Running clustering tasks..........')
-    # run_clustering_tasks(inverted_index, indexer, root_dir)
+    print('Running clustering tasks..........')
+    run_clustering_tasks(inverted_index, indexer, root_dir)
 
-    # print('Running doc prior creation task..........')
-    # run_doc_priors_creation_task(inverted_index, indexer, root_dir)
+    print('Running doc prior creation task..........')
+    run_doc_priors_creation_task(inverted_index, indexer, root_dir)
 
     print('Running inference network tasks..........')
     run_inference_network_with_prior_tasks(config, inverted_index, indexer, root_dir)
